@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart URL Analyzer</title>
+    <style>
+        :root {
+            --bg-light: #f0f4f8;
+            --bg-dark: #1c1f26;
+            --text-light: #333;
+            --text-dark: #eaeaea;
+            --card-light: #ffffff;
+            --card-dark: #2b2f3a;
+            --btn-bg-light: #007bff;
+            --btn-bg-dark: #4a90e2;
+            --highlight-text-light: #007bff;
+            --highlight-text-dark: #1effbc;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-light);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .form-container {
+            background: var(--card-light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            width: 90%;
+            max-width: 800px;
+            transition: background 0.3s ease;
+        }
+
+        body.dark .form-container {
+            background: var(--card-dark);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: none;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: var(--btn-bg-light);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        body.dark button {
+            background: var(--btn-bg-dark);
+        }
+
+        .main-container {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .left, .right {
+            flex: 1;
+            background: var(--card-light);
+            padding: 20px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        body.dark .left, body.dark .right {
+            background: var(--card-dark);
+        }
+
+        .highlight {
+            color: var(--highlight-text-light);
+            font-family: monospace;
+        }
+
+        body.dark .highlight {
+            color: var(--highlight-text-dark);
+        }
+
+        .url-text, .breakdown-text {
+            word-break: break-all;
+            max-width: 100%;
+            width: 100%;
+            overflow-wrap: break-word;
+            margin-top: 5px;
+            display: inline-block;
+            min-width: 0;
+        }
+
+        .left .url-container {
+            max-width: 500px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .left .cleaned-url-container {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .left .breakdown-container, .left .query-params-container {
+            max-width: 500px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .query-params-container ul {
+            list-style-type: square;
+            padding-left: 20px;
+            max-width: 100%;
+            max-height: 150px; /* Limit vertical growth */
+            overflow-y: auto; /* Scroll if too many parameters */
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        h3, h2 {
+            margin-top: 20px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .bottom-sections {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .bottom-sections .section {
+            background: var(--card-light);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.dark .bottom-sections .section {
+            background: var(--card-dark);
+        }
+
+        .theme-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .theme-switch input {
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        #summary-status {
+            font-size: 18px;
+            font-style: italic;
+            color: #aaa;
+            margin-bottom: 10px;
+            transition: color 0.5s ease;
+        }
+
+        #summary-status.done {
+            color: #4caf50;
+        }
+
+        /* Tooltip for Original URL, Path, and Query Parameters */
+        .url-tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .url-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 400px;
+            max-width: 90vw;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            padding: 10px;
+            border-radius: 4px;
+            position: fixed;
+            z-index: 1000;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .url-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-switch">
+        <label for="themeToggle">🌙</label>
+        <input type="checkbox" id="themeToggle">
+    </div>
+
+    <div class="form-container">
+        <form method="POST">
+            <input type="text" name="url" placeholder="Enter a URL..." required>
+            <button type="submit">Analyze</button>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="main-container">
+        <div class="left">
+            <h2>🔍 URL Analysis</h2>
+            <p><strong>Original URL:</strong></p>
+            <div class="url-container">
+                <p class="url-text highlight">
+                    <span class="url-tooltip">
+                        {% if result.original|length > 50 %}
+                            {{ result.original[:50] }}...
+                        {% else %}
+                            {{ result.original }}
+                        {% endif %}
+                        <span class="tooltip-text">{{ result.original }}</span>
+                    </span>
+                </p>
+            </div>
+            <p><strong>Cleaned URL:</strong></p>
+            <div class="cleaned-url-container">
+                <p class="url-text highlight" id="cleaned-output"></p>
+            </div>
+            <p><strong>Is Valid:</strong> <span class="status">{{ '✅ Yes' if result.valid else '❌ No' }}</span></p>
+            <p><strong>Spam (Rule-Based):</strong> <span class="status">{{ '🚫 Yes' if result.spam else '✅ No' }}</span></p>
+            <p><strong>ML Prediction:</strong> <span class="status">{{ result.ml_label }} (Confidence: {{ result.ml_prob }}%)</span></p>
+            <hr>
+            <div class="breakdown-container">
+                <h3>🧩 URL Breakdown</h3>
+                <p><strong>Protocol:</strong> <span class="breakdown-text">{{ result.protocol }}</span></p>
+                <p><strong>Domain:</strong> <span class="breakdown-text">{{ result.domain }}</span></p>
+                <p><strong>Path:</strong> 
+                    <span class="url-tooltip breakdown-text">
+                        {% if result.path|length > 50 %}
+                            {{ result.path[:50] }}...
+                        {% else %}
+                            {{ result.path }}
+                        {% endif %}
+                        <span class="tooltip-text">{{ result.path }}</span>
+                    </span>
+                </p>
+            </div>
+            <div class="query-params-container">
+                <h4>🔗 Query Parameters:</h4>
+                {% if result.query_params %}
+                    <ul>
+                        {% for k, v in result.query_params.items() %}
+                        <li>
+                            <span class="url-tooltip breakdown-text">
+                                {% if k|length > 60 %}
+                                    {{ k[:50] }}...
+                                {% else %}
+                                    {{ k }}
+                                {% endif %}
+                                <span class="tooltip-text">{{ k }}</span>
+                            </span>: 
+                            <span class="url-tooltip breakdown-text">
+                                {% if v|length > 60 %}
+                                    {{ v[:50] }}...
+                                {% else %}
+                                    {{ v }}
+                                {% endif %}
+                                <span class="tooltip-text">{{ v }}</span>
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No query parameters</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="right">
+            <h2>🧠 Page Summary</h2>
+            {% if summary == "YouTube page cannot be summarized" %}
+                <pre>{{ summary }}</pre>
+            {% else %}
+                <p id="summary-status"></p>
+                <pre id="summary-output"></pre>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bottom-sections">
+        <div class="section">
+            <h2>💡 Why Use This Tool?</h2>
+            <p>This tool helps remove trackers and parameters from long and suspicious URLs, making them cleaner, shorter, and safer to share. It also detects if a link is valid, spammy, or malicious.</p>
+        </div>
+        <div class="section">
+            <h2>⚙️ How It Works</h2>
+            <p>When you paste a URL, we:</p>
+            <ul>
+                <li>Follow redirects to the final destination</li>
+                <li>Remove tracking parameters like <code>utm_source</code>, <code>fbclid</code>, etc.</li>
+                <li>Check if the link is live and reachable</li>
+                <li>Use rules and ML to predict if the link is spam or safe</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>📖 About This Project</h2>
+            <p>This project is built using Python, Flask, and basic machine learning to demonstrate how links can be analyzed and cleaned for safety and simplicity. It's a useful tool for researchers, students, and general users who want more control over the links they click or share.</p>
+        </div>
+    </div>
+
+    {% if result %}
+    <script>
+        const text = "{{ result.cleaned | safe }}";
+        const output = document.getElementById("cleaned-output");
+        let index = 0;
+
+        function typeEffect() {
+            if (index < text.length) {
+                output.textContent += text.charAt(index);
+                index++;
+                setTimeout(typeEffect, 40);
+            } else {
+                output.innerHTML = '<a href="' + text + '" target="_blank" class="highlight url-text">' + text + '</a>';
+            }
+        }
+
+        setTimeout(() => {
+            output.textContent = "";
+            typeEffect();
+        }, 400);
+    </script>
+    {% endif %}
+
+    {% if summary and summary != "YouTube page cannot be summarized" %}
+    <script>
+        const summaryText = `{{ summary | safe }}`;
+        const summaryOutput = document.getElementById("summary-output");
+        const status = document.getElementById("summary-status");
+        let summaryIndex = 0;
+
+        // Set initial status
+        status.textContent = "Summarizing for you";
+
+        function typeSummary() {
+            if (summaryIndex < summaryText.length) {
+                summaryOutput.textContent += summaryText.charAt(summaryIndex);
+                summaryIndex++;
+                setTimeout(typeSummary, 15);
+            } else {
+                status.textContent = "Summarized";
+                status.classList.add("done");
+            }
+        }
+
+        setTimeout(() => {
+            summaryOutput.textContent = "";
+            typeSummary();
+        }, 1000);
+    </script>
+    {% endif %}
+
+    <script>
+        const toggle = document.getElementById("themeToggle");
+        const saved = localStorage.getItem("theme");
+
+        if (saved === "dark") {
+            document.body.classList.add("dark");
+            toggle.checked = true;
+        }
+
+        toggle.addEventListener("change", () => {
+            document.body.classList.toggle("dark");
+            localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+        });
+    </script>
+</body>
+</html>
