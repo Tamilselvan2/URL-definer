@@ -96,7 +96,6 @@ def simplify_known_paths(url):
             post_type = post_match.group(1)
             post_id = post_match.group(2)
             return f"https://instagram.com/{post_type}/{post_id}/"
-
     # Twitter (X) link simplification
     if "twitter.com" in domain or "x.com" in domain:
         # Profile link: /username
