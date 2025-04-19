@@ -42,7 +42,7 @@ def remove_tracking_params(url):
     return urllib.parse.urlunparse(parsed._replace(query=cleaned_query, fragment=''))
 
 def simplify_known_paths(url):
-    """Simplify URLs for known domains, including YouTube, Amazon, and Flipkart."""
+    """Simplify URLs for known domains, including YouTube, Amazon, Flipkart, Instagram, and Twitter (X)."""
     parsed = urllib.parse.urlparse(url)
     domain = parsed.netloc.replace("www.", "").lower()
     path = parsed.path
@@ -78,6 +78,34 @@ def simplify_known_paths(url):
         if match:
             return f"https://{parsed.netloc}{match.group(1)}"
 
+    # Instagram link simplification
+    if "instagram.com" in domain:
+        # Profile link: /username/
+        profile_match = re.match(r'^/([^/]+)/?$', path)
+        if profile_match:
+            username = profile_match.group(1)
+            return f"https://instagram.com/{username}/"
+        # Post link: /p/post_id/ or /reel/post_id/
+        post_match = re.match(r'^/(p|reel)/([^/]+)/?$', path)
+        if post_match:
+            post_type = post_match.group(1)
+            post_id = post_match.group(2)
+            return f"https://instagram.com/{post_type}/{post_id}/"
+
+    # Twitter (X) link simplification
+    if "twitter.com" in domain or "x.com" in domain:
+        # Profile link: /username
+        profile_match = re.match(r'^/([^/]+)$', path)
+        if profile_match:
+            username = profile_match.group(1)
+            return f"https://twitter.com/{username}"
+        # Post link: /username/status/post_id
+        post_match = re.match(r'^/([^/]+)/status/(\d+)$', path)
+        if post_match:
+            username = post_match.group(1)
+            post_id = post_match.group(2)
+            return f"https://twitter.com/{username}/status/{post_id}"
+
     # Fallback: remove query and fragment for other domains
     return urllib.parse.urlunparse(parsed._replace(query='', fragment=''))
 
@@ -90,6 +118,10 @@ def generate_summary(url):
     # Check if the URL is a YouTube link
     if domain in ["youtube.com", "youtu.be"]:
         return "YouTube page cannot be summarized"
+    elif domain == "instagram.com":
+        return "Instagram page cannot be summarized"
+    elif domain in ["twitter.com", "x.com"]:
+        return "Twitter page cannot be summarized"
 
     prompt = (
         f"{url} - summarize the content in this page like title, "
@@ -127,7 +159,7 @@ def index():
         query_params = dict(urllib.parse.parse_qsl(parsed.query))
         trackers = {k: v for k, v in query_params.items() if k.lower() in TRACKERS}
 
-        # Generate summary using the original URL (unchanged)
+        # Generate summary using the clean link
         summary = generate_summary(cleaned_url)
 
         # Prepare result dictionary
