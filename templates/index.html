@@ -445,15 +445,15 @@
                 {% endif %}
             </div>
         </div>
-        <div class="right">
-            <h2>Page Summary</h2>
-            {% if summary == "YouTube page cannot be summarized" %}
-                <pre>{{ summary }}</pre>
-            {% else %}
-                <p id="summary-status">Summarizing for you</p>
-                <pre id="summary-output"></pre>
-            {% endif %}
-        </div>
+<div class="right">
+    <h2>Page Summary</h2>
+    {% if summary in ["YouTube page cannot be summarized", "Instagram page cannot be summarized", "Twitter page cannot be summarized"] %}
+        <pre>{{ summary }}</pre>
+    {% else %}
+        <p id="summary-status">Summarizing for you</p>
+        <pre id="summary-output"></pre>
+    {% endif %}
+</div>
     </div>
     {% endif %}
 
