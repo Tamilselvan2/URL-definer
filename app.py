@@ -80,11 +80,16 @@ def simplify_known_paths(url):
 
     # Instagram link simplification
     if "instagram.com" in domain:
-        # Profile link: /username/
-        profile_match = re.match(r'^/([^/]+)/?$', path)
-        if profile_match:
+        # Reserved paths to exclude
+        reserved_paths = [
+            'accounts', 'explore', 'direct', 'reels', 'stories', 'p', 'reel',
+            'login', 'signup', 'about', 'privacy', 'terms', 'challenge'
+        ]
+        # Profile link: /username (alphanumeric, underscores, periods, 1-30 chars)
+        profile_match = re.match(r'^/([a-zA-Z0-9_.]{1,30})/?$', path)
+        if profile_match and profile_match.group(1) not in reserved_paths:
             username = profile_match.group(1)
-            return f"https://instagram.com/{username}/"
+            return f"https://instagram.com/{username}"
         # Post link: /p/post_id/ or /reel/post_id/
         post_match = re.match(r'^/(p|reel)/([^/]+)/?$', path)
         if post_match:
