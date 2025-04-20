@@ -9,12 +9,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
         :root {
-            --bg-light: #f0f4f8;
-            --bg-dark: #1c1f26;
+            --bg-light: #ffffff;
+            --bg-dark: #000000;
             --text-light: #333;
             --text-dark: #eaeaea;
-            --card-light: #ffffff;
-            --card-dark: #2b2f3a;
+            --card-light: rgba(255, 255, 255, 0.85);
+            --card-dark: rgba(0, 0, 0, 0.85);
             --btn-bg-light: #007bff;
             --btn-bg-dark: #4a90e2;
             --highlight-text-light: #007bff;
@@ -25,18 +25,52 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: var(--bg-light);
+            background: var(--bg-light) url('/static/images/bright_mode.jpg') no-repeat center center;
+            background-size: cover;
             color: var(--text-light);
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: background 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            margin: 0;
         }
 
         body.dark {
-            background: var(--bg-dark);
+            background: var(--bg-dark) url('/static/images/dark_mode.jpg') no-repeat center center;
+            background-size: cover;
             color: var(--text-dark);
+        }
+
+        /* Parallax effect container */
+        .parallax-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%;
+            background: inherit;
+            z-index: -1;
+            will-change: transform;
+        }
+
+        .frosty-box {
+            background: rgba(255, 255, 255, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .frosty-box {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .form-container {
@@ -49,20 +83,37 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: background 0.3s ease;
             overflow: hidden;
+            position: relative;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
 
         body.dark .form-container {
             background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         input[type="text"] {
-            width: calc(100% - 24px);
+            width: 70%;
+            min-width: 200px;
             padding: 12px;
             border-radius: 6px;
             border: none;
             margin-bottom: 10px;
             font-size: 16px;
             box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-light);
+            flex-grow: 1;
+        }
+
+        body.dark input[type="text"] {
+            background: rgba(0, 0, 0, 0.9);
+            color: var(--text-dark);
         }
 
         button {
@@ -73,6 +124,8 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.3s ease, transform 0.2s ease;
+            font-size: 16px;
+            white-space: nowrap;
         }
 
         button:hover {
@@ -92,6 +145,10 @@
             animation: fadeIn 0.5s ease-out;
         }
 
+        .frosty-box.main-box {
+            flex: 1;
+        }
+
         .left, .right {
             flex: 1;
             background: var(--card-light);
@@ -99,10 +156,14 @@
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: background 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         body.dark .left, body.dark .right {
             background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .highlight {
@@ -151,12 +212,23 @@
         pre {
             white-space: pre-wrap;
             font-family: 'Courier New', Courier, monospace;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        body.dark pre {
+            background: rgba(0, 0, 0, 0.9);
         }
 
         .bottom-sections {
             margin-top: 30px;
             width: 100%;
             max-width: 1100px;
+        }
+
+        .frosty-box.bottom-box {
+            margin-bottom: 30px;
         }
 
         .bottom-sections .section {
@@ -166,13 +238,16 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: background 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         body.dark .bottom-sections .section {
             background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Theme Switcher */
         .theme-switch {
             position: fixed;
             top: 20px;
@@ -226,7 +301,6 @@
             color: var(--text-dark);
         }
 
-        /* Tooltip */
         .url-tooltip {
             position: relative;
             display: inline-block;
@@ -260,7 +334,6 @@
             opacity: 1;
         }
 
-        /* Copy Button */
         .copy-btn {
             margin-left: 10px;
             padding: 8px 12px;
@@ -276,7 +349,6 @@
             background-color: #218838;
         }
 
-        /* Loading Spinner */
         #loading {
             display: none;
             text-align: center;
@@ -292,7 +364,6 @@
             color: var(--btn-bg-dark);
         }
 
-        /* Alert Box */
         .alert {
             padding: 15px;
             border-radius: 6px;
@@ -305,7 +376,6 @@
             border: 1px solid #f5c6cb;
         }
 
-        /* Collapsible Sections */
         .collapsible {
             background: none;
             border: none;
@@ -316,7 +386,7 @@
         }
 
         body.dark .collapsible {
-            color: var(--text-dark); /* Improved readability in dark mode */
+            color: var(--text-dark);
         }
 
         .collapse-content {
@@ -326,21 +396,36 @@
             padding: 10px;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
-            background: #f9f9f9;
+            background: var(--card-light);
             transition: background 0.3s ease;
         }
 
         body.dark .collapse-content {
-            background: #333;
+            background: var(--card-dark);
             border-color: #444;
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
+            .form-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            input[type="text"] {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            button {
+                width: 100%;
+                max-width: 200px;
+                margin: 0 auto;
+            }
             .main-container {
                 flex-direction: column;
             }
             .left, .right {
+                width: 100%;
+            }
+            .frosty-box.main-box {
                 width: 100%;
             }
         }
@@ -352,6 +437,7 @@
     </style>
 </head>
 <body>
+    <div class="parallax-bg"></div>
     <div class="theme-switch">
         <span class="icon">☀️</span>
         <input type="checkbox" id="themeToggle">
@@ -361,125 +447,131 @@
 
     <h1>URL Definer</h1>
 
-    <div class="form-container">
-        <form method="POST" aria-label="URL analysis form">
-            <input type="text" name="url" placeholder="Enter a URL..." required aria-label="URL input">
-            <button type="submit" aria-label="Analyze URL">Analyze</button>
-        </form>
-        <div id="loading">
-            <i class="fas fa-spinner fa-spin"></i> Analyzing...
+    <div class="frosty-box">
+        <div class="form-container">
+            <form method="POST" aria-label="URL analysis form">
+                <input type="text" name="url" placeholder="Enter a URL..." required aria-label="URL input">
+                <button type="submit" aria-label="Analyze URL">Analyze</button>
+            </form>
+            <div id="loading">
+                <i class="fas fa-spinner fa-spin"></i> Analyzing...
+            </div>
+            {% if error %}
+            <div class="alert error">Error: {{ error }}</div>
+            {% endif %}
         </div>
-        {% if error %}
-        <div class="alert error">Error: {{ error }}</div>
-        {% endif %}
     </div>
 
     {% if result %}
-    <div class="main-container">
-        <div class="left">
-            <h2>URL Analysis</h2>
-            <p><strong>Original URL:</strong></p>
-            <div class="url-container">
-                <p class="url-text highlight">
-                    <span class="url-tooltip">
-                        {% if result.original|length > 50 %}
-                            {{ result.original[:50] }}...
-                        {% else %}
-                            {{ result.original }}
-                        {% endif %}
-                        <span class="tooltip-text">{{ result.original }}</span>
-                    </span>
-                </p>
+    <div class="frosty-box main-box">
+        <div class="main-container">
+            <div class="left">
+                <h2>URL Analysis</h2>
+                <p><strong>Original URL:</strong></p>
+                <div class="url-container">
+                    <p class="url-text highlight">
+                        <span class="url-tooltip">
+                            {% if result.original|length > 50 %}
+                                {{ result.original[:50] }}...
+                            {% else %}
+                                {{ result.original }}
+                            {% endif %}
+                            <span class="tooltip-text">{{ result.original }}</span>
+                        </span>
+                    </p>
+                </div>
+                <p><strong>Final URL:</strong></p>
+                <div class="cleaned-url-container">
+                    <p class="url-text highlight" id="cleaned-output">{{ result.cleaned | safe }}</p>
+                    <button onclick="copyToClipboard('{{ result.cleaned | safe }}')" class="copy-btn">Copy</button>
+                </div>
+                <p><strong>Is Valid:</strong> <span class="status">{{ 'Yes' if result.valid else 'No' }}</span></p>
+                <p><strong>Spam (Rule-Based):</strong> <span class="status">{{ 'Yes' if result.spam else 'No' }}</span></p>
+                <p><strong>ML Prediction:</strong> <span class="status">{{ result.ml_label }} (Confidence: {{ result.ml_prob }}%)</span></p>
+                <hr>
+                <button class="collapsible">URL Breakdown</button>
+                <div class="collapse-content">
+                    <p><strong>Protocol:</strong> <span class="breakdown-text">{{ result.protocol }}</span></p>
+                    <p><strong>Domain:</strong> <span class="breakdown-text">{{ result.domain }}</span></p>
+                    <p><strong>Path:</strong> 
+                        <span class="url-tooltip breakdown-text">
+                            {% if result.path|length > 50 %}
+                                {{ result.path[:50] }}...
+                            {% else %}
+                                {{ result.path }}
+                            {% endif %}
+                            <span class="tooltip-text">{{ result.path }}</span>
+                        </span>
+                    </p>
+                </div>
+                <button class="collapsible">Query Parameters</button>
+                <div class="collapse-content">
+                    {% if result.query_params %}
+                        <ul>
+                            {% for k, v in result.query_params.items() %}
+                            <li>
+                                <span class="url-tooltip breakdown-text">
+                                    {% if k|length > 60 %}
+                                        {{ k[:50] }}...
+                                    {% else %}
+                                        {{ k }}
+                                    {% endif %}
+                                    <span class="tooltip-text">{{ k }}</span>
+                                </span>: 
+                                <span class="url-tooltip breakdown-text">
+                                    {% if v|length > 60 %}
+                                        {{ v[:50] }}...
+                                    {% else %}
+                                        {{ v }}
+                                    {% endif %}
+                                    <span class="tooltip-text">{{ v }}</span>
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No query parameters</p>
+                    {% endif %}
+                </div>
             </div>
-            <p><strong>Final Redirected URL:</strong></p>
-            <div class="cleaned-url-container">
-                <p class="url-text highlight" id="cleaned-output">{{ result.cleaned | safe }}</p>
-                <button onclick="copyToClipboard('{{ result.cleaned | safe }}')" class="copy-btn">Copy</button>
-            </div>
-            <p><strong>Is Valid:</strong> <span class="status">{{ 'Yes' if result.valid else 'No' }}</span></p>
-            <p><strong>Spam (Rule-Based):</strong> <span class="status">{{ 'Yes' if result.spam else 'No' }}</span></p>
-            <p><strong>ML Prediction:</strong> <span class="status">{{ result.ml_label }} (Confidence: {{ result.ml_prob }}%)</span></p>
-            <hr>
-            <button class="collapsible">URL Breakdown</button>
-            <div class="collapse-content">
-                <p><strong>Protocol:</strong> <span class="breakdown-text">{{ result.protocol }}</span></p>
-                <p><strong>Domain:</strong> <span class="breakdown-text">{{ result.domain }}</span></p>
-                <p><strong>Path:</strong> 
-                    <span class="url-tooltip breakdown-text">
-                        {% if result.path|length > 50 %}
-                            {{ result.path[:50] }}...
-                        {% else %}
-                            {{ result.path }}
-                        {% endif %}
-                        <span class="tooltip-text">{{ result.path }}</span>
-                    </span>
-                </p>
-            </div>
-            <button class="collapsible">Query Parameters</button>
-            <div class="collapse-content">
-                {% if result.query_params %}
-                    <ul>
-                        {% for k, v in result.query_params.items() %}
-                        <li>
-                            <span class="url-tooltip breakdown-text">
-                                {% if k|length > 60 %}
-                                    {{ k[:50] }}...
-                                {% else %}
-                                    {{ k }}
-                                {% endif %}
-                                <span class="tooltip-text">{{ k }}</span>
-                            </span>: 
-                            <span class="url-tooltip breakdown-text">
-                                {% if v|length > 60 %}
-                                    {{ v[:50] }}...
-                                {% else %}
-                                    {{ v }}
-                                {% endif %}
-                                <span class="tooltip-text">{{ v }}</span>
-                            </span>
-                        </li>
-                        {% endfor %}
-                    </ul>
+            <div class="right">
+                <h2>Page Summary</h2>
+                {% if summary in ["YouTube page cannot be summarized", "Instagram page cannot be summarized", "Twitter page cannot be summarized"] %}
+                    <pre>{{ summary }}</pre>
                 {% else %}
-                    <p>No query parameters</p>
+                    <p id="summary-status">Summarizing for you</p>
+                    <pre id="summary-output"></pre>
                 {% endif %}
             </div>
         </div>
-<div class="right">
-    <h2>Page Summary</h2>
-    {% if summary in ["YouTube page cannot be summarized", "Instagram page cannot be summarized", "Twitter page cannot be summarized"] %}
-        <pre>{{ summary }}</pre>
-    {% else %}
-        <p id="summary-status">Summarizing for you</p>
-        <pre id="summary-output"></pre>
-    {% endif %}
-</div>
     </div>
     {% endif %}
 
-    <div class="bottom-sections">
-        <div class="section">
-            <h2>Why Use This Tool?</h2>
-            <p>This tool helps remove trackers and parameters from long and suspicious URLs, making them cleaner, shorter, and safer to share. It also detects if a link is valid, spammy, or malicious.</p>
-        </div>
-        <div class="section">
-            <h2>How It Works</h2>
-            <p>When you paste a URL, we:</p>
-            <ul>
-                <li>Follow redirects to the final destination</li>
-                <li>Remove tracking parameters like <code>utm_source</code>, <code>fbclid</code>, etc.</li>
-                <li>Check if the link is live and reachable</li>
-                <li>Use rules and ML to predict if the link is spam or safe</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>About This Project</h2>
-            <p>This project is built using Python, Flask, and basic machine learning to demonstrate how links can be analyzed and cleaned for safety and simplicity. It's a useful tool for researchers, students, and general users who want more control over the links they click or share.</p>
+    <div class="frosty-box bottom-box">
+        <div class="bottom-sections">
+            <div class="section">
+                <h2>Why Use This Tool?</h2>
+                <p>This tool helps remove trackers and parameters from long and suspicious URLs, making them cleaner, shorter, and safer to share. It also detects if a link is valid, spammy, or malicious.</p>
+            </div>
+            <div class="section">
+                <h2>How It Works</h2>
+                <p>When you paste a URL, we:</p>
+                <ul>
+                    <li>Follow redirects to the final destination</li>
+                    <li>Remove tracking parameters like <code>utm_source</code>, <code>fbclid</code>, etc.</li>
+                    <li>Check if the link is live and reachable</li>
+                    <li>Use rules and ML to predict if the link is spam or safe</li>
+                </ul>
+            </div>
+            <div class="section">
+                <h2>About This Project</h2>
+                <p>This project is built using Python, Flask, and basic machine learning to demonstrate how links can be analyzed and cleaned for safety and simplicity. It's a useful tool for researchers, students, and general users who want more control over the links they click or share.</p>
+            </div>
         </div>
     </div>
 
     <footer>
-        <p>Developed by Team8 ❤️</p>
+        <p>URL Definer | Developed by Team8❤️</p>
     </footer>
 
     <script>
@@ -513,6 +605,7 @@
         toggle.addEventListener("change", () => {
             document.body.classList.toggle("dark");
             localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+            updateParallaxBg(); // Update background on theme change
         });
 
         // Typing Animation for Final Redirected URL
@@ -536,7 +629,7 @@
         {% endif %}
 
         // Typing Animation for Summary
-        {% if summary and summary != "YouTube page cannot be summarized" %}
+        {% if summary and summary not in ["YouTube page cannot be summarized", "Instagram page cannot be summarized", "Twitter page cannot be summarized"] %}
         const summaryText = `{{ summary | safe }}`;
         const summaryOutput = document.getElementById("summary-output");
         const status = document.getElementById("summary-status");
@@ -555,6 +648,22 @@
             typeSummary();
         }, 1000);
         {% endif %}
+
+        // Parallax Effect
+        const parallaxBg = document.querySelector('.parallax-bg');
+        function updateParallaxBg() {
+            const scrollPosition = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.body.scrollHeight;
+            const maxScroll = documentHeight - windowHeight;
+            const parallaxSpeed = 0.5;
+            const translateY = (scrollPosition / maxScroll) * 100 * parallaxSpeed;
+            parallaxBg.style.transform = `translate3d(0, -${translateY}%, 0)`;
+        }
+
+        window.addEventListener('scroll', updateParallaxBg);
+        window.addEventListener('load', updateParallaxBg);
+        window.addEventListener('resize', updateParallaxBg);
     </script>
 </body>
 </html>
