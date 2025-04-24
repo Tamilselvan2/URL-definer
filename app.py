@@ -5,8 +5,7 @@ import requests
 import validators
 from google import generativeai as genai
 
-# Configure the Google Generative AI API
-genai.configure(api_key="AIzaSyAExghwYHuQP_qkKJ50hrJFyAGKwjy0R34")  # Replace with your API key
+genai.configure(api_key="AIzaSyAExghwYHuQP_qkKJ50hrJFyAGKwjy0R34") 
 
 app = Flask(__name__)
 
@@ -48,7 +47,6 @@ def simplify_known_paths(url):
     path = parsed.path
     query = urllib.parse.parse_qs(parsed.query)
 
-    # YouTube link simplification
     if "youtube.com" in domain:
         new_query = {}
         if 'v' in query:
@@ -66,19 +64,16 @@ def simplify_known_paths(url):
         new_query_string = urllib.parse.urlencode(new_query, doseq=True)
         return f"https://youtube.com/watch?{new_query_string}"
 
-    # Amazon link simplification
     if "amazon." in domain:
         match = re.search(r'/dp/([A-Z0-9]{10})', path)
         if match:
             return f"https://{parsed.netloc}/dp/{match.group(1)}"
 
-    # Flipkart link simplification
     if "flipkart.com" in domain:
         match = re.search(r'(/[^/]+/p/it[^\?/]+)', path)
         if match:
             return f"https://{parsed.netloc}{match.group(1)}"
 
-    # Instagram link simplification
     if "instagram.com" in domain:
         # Reserved paths to exclude
         reserved_paths = [
@@ -96,7 +91,7 @@ def simplify_known_paths(url):
             post_type = post_match.group(1)
             post_id = post_match.group(2)
             return f"https://instagram.com/{post_type}/{post_id}/"
-    # Twitter (X) link simplification
+
     if "twitter.com" in domain or "x.com" in domain:
         # Profile link: /username
         profile_match = re.match(r'^/([^/]+)$', path)
@@ -110,7 +105,6 @@ def simplify_known_paths(url):
             post_id = post_match.group(2)
             return f"https://twitter.com/{username}/status/{post_id}"
 
-    # Fallback: remove query and fragment for other domains
     return urllib.parse.urlunparse(parsed._replace(query='', fragment=''))
 
 def generate_summary(url):
@@ -119,7 +113,6 @@ def generate_summary(url):
     parsed = urllib.parse.urlparse(url)
     domain = parsed.netloc.lower().replace("www.", "")
 
-    # Check if the URL is a YouTube link
     if domain in ["youtube.com", "youtu.be"]:
         return "YouTube page cannot be summarized"
     elif domain == "instagram.com":
@@ -149,27 +142,23 @@ def index():
     summary = None
     if request.method == "POST":
         input_url = request.form["url"]
-        # Follow redirects and clean the URL
+    
         final_url = follow_redirects(input_url)
         cleaned_url = remove_tracking_params(final_url)
         simplified_url = simplify_known_paths(cleaned_url)
 
-        # Validate URL format and check for spam (unchanged)
         valid = validators.url(input_url)
         spam = any(x in input_url for x in ["spammy", "clickbait", "malware"])
 
-        # Parse original URL for details (unchanged)
         parsed = urllib.parse.urlparse(input_url)
         query_params = dict(urllib.parse.parse_qsl(parsed.query))
         trackers = {k: v for k, v in query_params.items() if k.lower() in TRACKERS}
 
-        # Generate summary using the clean link
         summary = generate_summary(cleaned_url)
-
-        # Prepare result dictionary
+        
         result = {
             "original": input_url,
-            "cleaned": simplified_url,  # Updated to use simplified URL
+            "cleaned": simplified_url, 
             "valid": valid,
             "spam": spam,
             "ml_label": "Safe" if not spam else "Spam",
