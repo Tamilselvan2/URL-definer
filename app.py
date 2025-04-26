@@ -9,7 +9,6 @@ genai.configure(api_key="AIzaSyAExghwYHuQP_qkKJ50hrJFyAGKwjy0R34")
 
 app = Flask(__name__)
 
-# Constants for HTTP requests and tracking parameters
 HEADERS = {
     'User-Agent': 'Mozilla/5.0',
     'Referer': 'https://google.com',
@@ -75,17 +74,16 @@ def simplify_known_paths(url):
             return f"https://{parsed.netloc}{match.group(1)}"
 
     if "instagram.com" in domain:
-        # Reserved paths to exclude
         reserved_paths = [
             'accounts', 'explore', 'direct', 'reels', 'stories', 'p', 'reel',
             'login', 'signup', 'about', 'privacy', 'terms', 'challenge'
         ]
-        # Profile link: /username (alphanumeric, underscores, periods, 1-30 chars)
+    
         profile_match = re.match(r'^/([a-zA-Z0-9_.]{1,30})/?$', path)
         if profile_match and profile_match.group(1) not in reserved_paths:
             username = profile_match.group(1)
             return f"https://instagram.com/{username}"
-        # Post link: /p/post_id/ or /reel/post_id/
+        
         post_match = re.match(r'^/(p|reel)/([^/]+)/?$', path)
         if post_match:
             post_type = post_match.group(1)
@@ -93,12 +91,12 @@ def simplify_known_paths(url):
             return f"https://instagram.com/{post_type}/{post_id}/"
 
     if "twitter.com" in domain or "x.com" in domain:
-        # Profile link: /username
+        
         profile_match = re.match(r'^/([^/]+)$', path)
         if profile_match:
             username = profile_match.group(1)
             return f"https://twitter.com/{username}"
-        # Post link: /username/status/post_id
+        
         post_match = re.match(r'^/([^/]+)/status/(\d+)$', path)
         if post_match:
             username = post_match.group(1)
