@@ -136,6 +136,34 @@
             background: var(--btn-bg-dark);
         }
 
+        .survey-container {
+            background: var(--card-light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: background 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        body.dark .survey-container {
+            background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .survey-container select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            margin: 10px;
+        }
+
         .main-container {
             display: flex;
             gap: 30px;
@@ -198,6 +226,18 @@
 
         .status {
             font-weight: bold;
+        }
+
+        .safe {
+            color: green;
+        }
+
+        .malicious {
+            color: red;
+        }
+
+        .error {
+            color: orange;
         }
 
         h2, h3 {
@@ -405,11 +445,11 @@
         }
 
         @media (max-width: 768px) {
-            .form-container {
+            .form-container, .survey-container {
                 flex-direction: column;
                 align-items: stretch;
             }
-            input[type="text"] {
+            input[type="text"], select {
                 width: 100%;
                 margin-bottom: 15px;
             }
@@ -448,109 +488,115 @@
 
     <div class="frosty-box">
         <div class="form-container">
-            <form method="POST" aria-label="URL analysis form">
+            <form id="urlForm" aria-label="URL analysis form">
                 <input type="text" name="url" placeholder="Enter a URL..." required aria-label="URL input">
                 <button type="submit" aria-label="Analyze URL">Analyze</button>
             </form>
             <div id="loading">
                 <i class="fas fa-spinner fa-spin"></i> Analyzing...
             </div>
-            {% if error %}
-            <div class="alert error">Error: {{ error }}</div>
-            {% endif %}
+            <div id="error" class="alert error" style="display: none;"></div>
         </div>
     </div>
 
-    {% if result %}
-    <div class="frosty-box main-box">
+    <div id="knownFormContainer" class="frosty-box" style="display: none;">
+        <div class="survey-container">
+            <form id="knownForm" aria-label="Known status form">
+                <input type="hidden" name="input_url" id="knownInputUrl">
+                <p>Do you know the legitimacy of this site?</p>
+                <select name="known_status" required aria-label="Known or Unknown">
+                    <option value="" disabled selected>Select an option</option>
+                    <option value="Known">Known</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+                <button type="submit" aria-label="Submit known status">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="safetyFormContainer" class="frosty-box" style="display: none;">
+        <div class="survey-container">
+            <form id="safetyForm" aria-label="Safety status form">
+                <input type="hidden" name="input_url" id="safetyInputUrl">
+                <p>Is this site safe or unsafe?</p>
+                <select name="safety_status" required aria-label="Safe or Unsafe">
+                    <option value="" disabled selected>Select an option</option>
+                    <option value="Safe">Safe</option>
+                    <option value="Spam">Unsafe</option>
+                </select>
+                <button type="submit" aria-label="Submit safety status">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="resultContainer" class="frosty-box main-box" style="display: none;">
         <div class="main-container">
             <div class="left">
                 <h2>URL Analysis</h2>
                 <p><strong>Original URL:</strong></p>
                 <div class="url-container">
-                    <p class="url-text highlight">
-                        <span class="url-tooltip">
-                            {% if result.original|length > 50 %}
-                                {{ result.original[:50] }}...
-                            {% else %}
-                                {{ result.original }}
-                            {% endif %}
-                            <span class="tooltip-text">{{ result.original }}</span>
-                        </span>
-                    </p>
+                    <p class="url-text highlight" id="originalUrl"></p>
                 </div>
                 <p><strong>Final URL:</strong></p>
                 <div class="cleaned-url-container">
-                    <p class="url-text highlight" id="cleaned-output">{{ result.cleaned | safe }}</p>
-                    <button onclick="copyToClipboard('{{ result.cleaned | safe }}')" class="copy-btn">Copy</button>
+                    <p class="url-text highlight" id="cleanedUrl"></p>
+                    <button id="copyBtn" class="copy-btn">Copy</button>
                 </div>
-                <p><strong>Is Valid:</strong> <span class="status">{{ 'Yes' if result.valid else 'No' }}</span></p>
-                <p><strong>Spam (Rule-Based):</strong> <span class="status">{{ 'Yes' if result.spam else 'No' }}</span></p>
-                <p><strong>ML Prediction:</strong> <span class="status">{{ result.ml_label }} (Confidence: {{ result.ml_prob }}%)</span></p>
+                <p><strong>Is Valid:</strong> <span class="status" id="validStatus"></span></p>
+                <p><strong>Spam (Rule-Based):</strong> <span class="status" id="spamStatus"></span></p>
+                <p><strong>ML Prediction:</strong> 
+                    <span class="status" id="mlPrediction"></span>
+                </p>
+                <p id="fromCsvNote" style="display: none;"><em>Note: This result was retrieved from previous user feedback or analysis.</em></p>
                 <hr>
                 <button class="collapsible">URL Breakdown</button>
                 <div class="collapse-content">
-                    <p><strong>Protocol:</strong> <span class="breakdown-text">{{ result.protocol }}</span></p>
-                    <p><strong>Domain:</strong> <span class="breakdown-text">{{ result.domain }}</span></p>
+                    <p><strong>Protocol:</strong> <span class="breakdown-text" id="protocol"></span></p>
+                    <p><strong>Domain:</strong> <span class="breakdown-text" id="domain"></span></p>
                     <p><strong>Path:</strong> 
-                        <span class="url-tooltip breakdown-text">
-                            {% if result.path|length > 50 %}
-                                {{ result.path[:50] }}...
-                            {% else %}
-                                {{ result.path }}
-                            {% endif %}
-                            <span class="tooltip-text">{{ result.path }}</span>
-                        </span>
+                        <span class="url-tooltip breakdown-text" id="path"></span>
                     </p>
                 </div>
                 <button class="collapsible">Query Parameters</button>
-                <div class="collapse-content">
-                    {% if result.query_params %}
-                        <ul>
-                            {% for k, v in result.query_params.items() %}
-                            <li>
-                                <span class="url-tooltip breakdown-text">
-                                    {% if k|length > 60 %}
-                                        {{ k[:50] }}...
-                                    {% else %}
-                                        {{ k }}
-                                    {% endif %}
-                                    <span class="tooltip-text">{{ k }}</span>
-                                </span>: 
-                                <span class="url-tooltip breakdown-text">
-                                    {% if v|length > 60 %}
-                                        {{ v[:50] }}...
-                                    {% else %}
-                                        {{ v }}
-                                    {% endif %}
-                                    <span class="tooltip-text">{{ v }}</span>
-                                </span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No query parameters</p>
-                    {% endif %}
+                <div class="collapse-content" id="queryParamsContainer">
+                    <ul id="queryParamsList"></ul>
                 </div>
             </div>
             <div class="right">
                 <h2>Page Summary</h2>
-                {% if summary in ["YouTube page cannot be summarized", "Instagram page cannot be summarized", "Twitter page cannot be summarized"] %}
-                    <pre>{{ summary }}</pre>
-                {% else %}
-                    <p id="summary-status">Summarizing for you</p>
-                    <pre id="summary-output"></pre>
-                {% endif %}
+                <p id="summaryStatus">Summarizing for you</p>
+                <pre id="summaryOutput"></pre>
             </div>
         </div>
     </div>
-    {% endif %}
+
+    <div id="feedbackContainer" class="frosty-box" style="display: none;">
+        <div class="survey-container">
+            <p>Thank you for your feedback! It has been stored for future reference.</p>
+        </div>
+    </div>
+
+    <div id="reportFormContainer" class="frosty-box" style="display: none;">
+        <div class="survey-container">
+            <form id="reportForm" aria-label="Report status form">
+                <input type="hidden" name="input_url" id="reportInputUrl">
+                <p>Help improve our model: Is this site safe or unsafe?</p>
+                <select name="report_status" required aria-label="Safe or Unsafe">
+                    <option value="" disabled selected>Select an option</option>
+                    <option value="Safe">Safe</option>
+                    <option value="Spam">Unsafe</option>
+                </select>
+                <button type="submit" aria-label="Submit report status">Report</button>
+            </form>
+            <div id="reportMessage" style="display: none; margin-top: 10px;"></div>
+        </div>
+    </div>
 
     <div class="frosty-box bottom-box">
         <div class="bottom-sections">
             <div class="section">
                 <h2>Why Use This Tool?</h2>
-                <p>This tool helps remove trackers and parameters from long and suspicious URLs, making them cleaner, shorter, and safer to share. It also detects if a link is valid, spammy, or malicious. Protects your and the recipient's privacy.</p>
+                <p>This tool helps remove trackers and parameters from long and suspicious URLs, making them cleaner, shorter, and safer to share. It also detects if a link is valid, spammy, or malicious. Protects your and the recipient's privacy</p>
             </div>
             <div class="section">
                 <h2>How It Works</h2>
@@ -564,29 +610,286 @@
             </div>
             <div class="section">
                 <h2>About This Project</h2>
-                <p>This project is built using Python, G-Gemini, and basic Machine Learning(LogisticRegression) to demonstrate how links can be analyzed and cleaned for safety and simplicity. It's a useful tool for researchers, students, and general users who want more control over the links they click or share.</p>
+                <p>This project is built using Python, Flask, and basic machine learning to demonstrate how links can be analyzed and cleaned for safety and simplicity. It's a useful tool for researchers, students, and general users who want more control over the links they click or share.</p>
             </div>
         </div>
     </div>
 
     <footer>
-        <p>URL Definer | Developed by Team8</p>
+        <p>URL Definer | Developed by Team8❤️</p>
     </footer>
 
     <script>
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert("URL copied to clipboard!");
-            });
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
 
-    
-        document.querySelector('form').addEventListener('submit', () => {
-            document.getElementById('loading').style.display = 'block';
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = `Error: ${message}`;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function resetForms() {
+            document.getElementById('knownFormContainer').style.display = 'none';
+            document.getElementById('safetyFormContainer').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('feedbackContainer').style.display = 'none';
+            document.getElementById('reportFormContainer').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        document.getElementById('urlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resetForms();
+            showLoading(true);
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    showLoading(false);
+                    return;
+                }
+
+                if (data.show_known_form) {
+                    document.getElementById('knownInputUrl').value = data.input_url;
+                    document.getElementById('knownFormContainer').style.display = 'block';
+                } else if (data.result) {
+                    displayResult(data);
+                }
+
+                showLoading(false);
+            } catch (err) {
+                showError('Failed to analyze URL');
+                showLoading(false);
+            }
         });
 
-        
+        document.getElementById('knownForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resetForms();
+            showLoading(true);
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    showLoading(false);
+                    return;
+                }
+
+                if (data.show_safety_form) {
+                    document.getElementById('safetyInputUrl').value = data.input_url;
+                    document.getElementById('safetyFormContainer').style.display = 'block';
+                } else if (data.result) {
+                    displayResult(data);
+                }
+
+                showLoading(false);
+            } catch (err) {
+                showError('Failed to process survey');
+                showLoading(false);
+            }
+        });
+
+        document.getElementById('safetyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resetForms();
+            showLoading(true);
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    showLoading(false);
+                    return;
+                }
+
+                if (data.feedback_submitted) {
+                    document.getElementById('feedbackContainer').style.display = 'block';
+                }
+                displayResult(data);
+                showLoading(false);
+            } catch (err) {
+                showError('Failed to process feedback');
+                showLoading(false);
+            }
+        });
+
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading(true);
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/report', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    showLoading(false);
+                    return;
+                }
+
+                const reportMessage = document.getElementById('reportMessage');
+                reportMessage.textContent = data.message;
+                reportMessage.style.display = 'block';
+                document.getElementById('reportForm').style.display = 'none';
+                showLoading(false);
+            } catch (err) {
+                showError('Failed to submit report');
+                showLoading(false);
+            }
+        });
+
+        function displayResult(data) {
+            const result = data.result;
+            document.getElementById('resultContainer').style.display = 'block';
+
+            const original = escapeHtml(result.original);
+            const originalDisplay = original.length > 50 ? original.substring(0, 50) + '...' : original;
+            document.getElementById('originalUrl').innerHTML = `
+                <span class="url-tooltip">
+                    ${originalDisplay}
+                    <span class="tooltip-text">${original}</span>
+                </span>
+            `;
+
+            const cleaned = escapeHtml(result.cleaned);
+            document.getElementById('cleanedUrl').textContent = '';
+            let index = 0;
+            function typeEffect() {
+                if (index < cleaned.length) {
+                    document.getElementById('cleanedUrl').textContent += cleaned.charAt(index);
+                    index++;
+                    setTimeout(typeEffect, 40);
+                } else {
+                    document.getElementById('cleanedUrl').innerHTML = `
+                        <a href="${cleaned}" target="_blank" class="highlight url-text">${cleaned}</a>
+                    `;
+                }
+            }
+            setTimeout(typeEffect, 400);
+
+            document.getElementById('copyBtn').onclick = () => {
+                navigator.clipboard.writeText(result.cleaned).then(() => {
+                    alert("URL copied to clipboard!");
+                });
+            };
+
+            document.getElementById('validStatus').textContent = result.valid ? 'Yes' : 'No';
+            document.getElementById('spamStatus').textContent = result.spam ? 'Yes' : 'No';
+            document.getElementById('mlPrediction').className = 'status ' + 
+                (result.ml_label === 'Safe' ? 'safe' : result.ml_label === 'Spam' ? 'malicious' : 'error');
+            document.getElementById('mlPrediction').textContent = 
+                `${result.ml_label} (Confidence: ${result.ml_prob}%) - ${result.vt_reason}`;
+
+            if (data.from_csv) {
+                document.getElementById('fromCsvNote').style.display = 'block';
+            }
+
+            document.getElementById('protocol').textContent = result.protocol;
+            document.getElementById('domain').textContent = result.domain;
+            const path = escapeHtml(result.path);
+            const pathDisplay = path.length > 50 ? path.substring(0, 50) + '...' : path;
+            document.getElementById('path').innerHTML = `
+                <span class="url-tooltip breakdown-text">
+                    ${pathDisplay}
+                    <span class="tooltip-text">${path}</span>
+                </span>
+            `;
+
+            const queryParamsList = document.getElementById('queryParamsList');
+            queryParamsList.innerHTML = '';
+            if (Object.keys(result.query_params).length > 0) {
+                for (const [key, value] of Object.entries(result.query_params)) {
+                    const k = escapeHtml(key);
+                    const v = escapeHtml(value);
+                    const kDisplay = k.length > 60 ? k.substring(0, 50) + '...' : k;
+                    const vDisplay = v.length > 60 ? v.substring(0, 50) + '...' : v;
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="url-tooltip breakdown-text">
+                            ${kDisplay}
+                            <span class="tooltip-text">${k}</span>
+                        </span>: 
+                        <span class="url-tooltip breakdown-text">
+                            ${vDisplay}
+                            <span class="tooltip-text">${v}</span>
+                        </span>
+                    `;
+                    queryParamsList.appendChild(li);
+                }
+            } else {
+                queryParamsList.innerHTML = '<p>No query parameters</p>';
+            }
+
+            const summary = data.summary;
+            const summaryOutput = document.getElementById('summaryOutput');
+            const summaryStatus = document.getElementById('summaryStatus');
+            if (['YouTube page cannot be summarized', 'Instagram page cannot be summarized', 
+                 'Twitter page cannot be summarized', 'Site cannot be summarized as this seems to be malicious',
+                 'Site is not available'].includes(summary)) {
+                summaryStatus.style.display = 'none';
+                summaryOutput.textContent = summary;
+            } else {
+                summaryStatus.textContent = 'Summarizing for you';
+                summaryOutput.textContent = '';
+                let summaryIndex = 0;
+                function typeSummary() {
+                    if (summaryIndex < summary.length) {
+                        summaryOutput.textContent += summary.charAt(summaryIndex);
+                        summaryIndex++;
+                        setTimeout(typeSummary, 15);
+                    } else {
+                        summaryStatus.textContent = 'Summarized';
+                    }
+                }
+                setTimeout(typeSummary, 1000);
+            }
+
+            if (data.show_report_form) {
+                document.getElementById('reportFormContainer').style.display = 'block';
+                document.getElementById('reportInputUrl').value = result.original;
+                document.getElementById('reportMessage').style.display = 'none';
+                document.getElementById('reportForm').style.display = 'block';
+            }
+        }
+
         document.querySelectorAll('.collapsible').forEach(button => {
             button.addEventListener('click', () => {
                 const content = button.nextElementSibling;
@@ -594,7 +897,6 @@
             });
         });
 
-    
         const toggle = document.getElementById("themeToggle");
         const saved = localStorage.getItem("theme");
         if (saved === "dark") {
@@ -604,49 +906,8 @@
         toggle.addEventListener("change", () => {
             document.body.classList.toggle("dark");
             localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-            updateParallaxBg(); 
+            updateParallaxBg();
         });
-
-        
-        {% if result %}
-        const text = "{{ result.cleaned | safe }}";
-        const output = document.getElementById("cleaned-output");
-        let index = 0;
-        function typeEffect() {
-            if (index < text.length) {
-                output.textContent += text.charAt(index);
-                index++;
-                setTimeout(typeEffect, 40);
-            } else {
-                output.innerHTML = '<a href="' + text + '" target="_blank" class="highlight url-text">' + text + '</a>';
-            }
-        }
-        setTimeout(() => {
-            output.textContent = "";
-            typeEffect();
-        }, 400);
-        {% endif %}
-
-    
-        {% if summary and summary not in ["YouTube page cannot be summarized", "Instagram page cannot be summarized", "Twitter page cannot be summarized"] %}
-        const summaryText = `{{ summary | safe }}`;
-        const summaryOutput = document.getElementById("summary-output");
-        const status = document.getElementById("summary-status");
-        let summaryIndex = 0;
-        function typeSummary() {
-            if (summaryIndex < summaryText.length) {
-                summaryOutput.textContent += summaryText.charAt(summaryIndex);
-                summaryIndex++;
-                setTimeout(typeSummary, 15);
-            } else {
-                status.textContent = "Summarized";
-            }
-        }
-        setTimeout(() => {
-            summaryOutput.textContent = "";
-            typeSummary();
-        }, 1000);
-        {% endif %}
 
         const parallaxBg = document.querySelector('.parallax-bg');
         function updateParallaxBg() {
