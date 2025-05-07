@@ -41,7 +41,6 @@ TRACKERS = {
     'store', 'srno', 'otracker', 'ppt', 'ppn', 'ssid', 'iid', 'pid', 'cmp'
 }
 
-# Suspicious keywords often found in spam URLs
 SUSPICIOUS_KEYWORDS = [
     'login', 'secure', 'verify', 'free', 'win', 'promo', 'gift', 'click',
     'update', 'account', 'confirm', 'deal', 'redeem', 'prize', 'join'
@@ -62,20 +61,11 @@ def extract_handcrafted_features(urls):
         parsed = urlparse(url)
         query_params = urllib.parse.parse_qs(parsed.query)
         
-        # Feature 1: URL length
         url_length = len(url)
-        
-        # Feature 2: Number of query parameters
         num_query_params = len(query_params)
-        
-        # Feature 3: Presence of suspicious keywords
         has_suspicious = int(any(keyword in url.lower() for keyword in SUSPICIOUS_KEYWORDS))
-        
-        # Feature 4: Number of subdomains
         domain = parsed.netloc.lower().replace('www.', '')
         num_subdomains = len(domain.split('.')) - 2 if domain else 0
-        
-        # Feature 5: Presence of HTTPS
         is_https = int(parsed.scheme == 'https')
         
         features.append([url_length, num_query_params, has_suspicious, num_subdomains, is_https])
@@ -83,9 +73,8 @@ def extract_handcrafted_features(urls):
 
 # Function to normalize decision function scores to a confidence score (0-100%)
 def decision_to_confidence(decision_score):
-    # Use a logistic function to map decision function scores to [0, 1]
-    confidence = 1 / (1 + np.exp(-abs(decision_score)))  # Sigmoid function
-    return confidence * 100  # Convert to percentage
+    confidence = 1 / (1 + np.exp(-abs(decision_score)))
+    return confidence * 100
 
 # Function to train or retrain the model
 def train_model():
@@ -95,37 +84,31 @@ def train_model():
         data = pd.read_csv('dataset.csv')
         logger.debug(f"Dataset loaded with {len(data)} rows")
         
-        # Ensure labels are capitalized consistently
         data['label'] = data['label'].str.capitalize()
         X = data['url']
         y = data['label']
         
-        # Define the feature extraction pipeline
         feature_extractor = FeatureUnion([
             ('tfidf', TfidfVectorizer(
                 lowercase=True,
-                token_pattern=r'(?u)\b\w+\b|[^\w\s]',  # Include special chars
+                token_pattern=r'(?u)\b\w+\b|[^\w\s]',
                 max_features=5000
             )),
             ('handcrafted', FunctionTransformer(extract_handcrafted_features, validate=False))
         ])
         
-        # Define the pipeline with feature extraction and SVM classifier
         classifier = Pipeline([
             ('features', feature_extractor),
             ('clf', SVC(kernel='linear', random_state=42))
         ])
         
-        # Train the model
         classifier.fit(X, y)
         logger.debug("Model trained successfully")
         
-        # Evaluate the model using cross-validation
         cv_scores = cross_val_score(classifier, X, y, cv=5, scoring='f1_macro')
         logger.debug(f"Cross-validation F1 scores: {cv_scores}")
         logger.debug(f"Average F1 score: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
         
-        # Save the model and feature extractor
         joblib.dump(classifier, MODEL_PATH)
         joblib.dump(feature_extractor, FEATURE_EXTRACTOR_PATH)
         logger.debug("Model and feature extractor saved to disk")
@@ -149,16 +132,14 @@ else:
 
 # Configure the Google Generative AI API
 try:
-    genai.configure(api_key="AIzaSyAExghwYHuQP_qkKJ50hrJFyAGKwjy0R34")  # Replace with your API key
+    genai.configure(api_key="AIzaSyAExghwYHuQP_qkKJ50hrJFyAGKwjy0R34")
     logger.debug("Google Generative AI configured")
 except Exception as e:
     logger.error(f"Error configuring Google Generative AI: {str(e)}")
 
-# VirusTotal API key
-VT_API_KEY = "a9507f6997678501d52e54c24bc69e2d1e0fd3e595d3c4697dad568bb3007129"  # Replace with your actual VirusTotal API key
+VT_API_KEY = "a9507f6997678501d52e54c24bc69e2d1e0fd3e595d3c4697dad568bb3007129"
 
 def check_url_in_csv(url):
-    """Check if the URL exists in dataset.csv and return its label if found."""
     try:
         df = pd.read_csv('dataset.csv')
         matching_row = df[df['url'] == url]
@@ -173,21 +154,30 @@ def check_url_in_csv(url):
         return None
 
 def append_to_csv(url, label):
-    """Append a new URL and its label to dataset.csv and retrain the model."""
     try:
+        # Load the current dataset
         df = pd.read_csv('dataset.csv')
-        new_entry = pd.DataFrame({'url': [url], 'label': [label]})
-        df = pd.concat([df, new_entry], ignore_index=True)
-        df.to_csv('dataset.csv', index=False)
-        logger.debug(f"Appended URL {url} with label {label} to dataset")
         
-        # Retrain the model after appending
+        # Check if the URL already exists in the dataset
+        if url in df['url'].values:
+            # Update the label for the existing URL
+            df.loc[df['url'] == url, 'label'] = label
+            logger.debug(f"Updated label for URL {url} to {label} in dataset")
+        else:
+            # Append a new entry if the URL doesn't exist
+            new_entry = pd.DataFrame({'url': [url], 'label': [label]})
+            df = pd.concat([df, new_entry], ignore_index=True)
+            logger.debug(f"Appended new URL {url} with label {label} to dataset")
+        
+        # Save the updated dataset
+        df.to_csv('dataset.csv', index=False)
+        
+        # Retrain the model after updating the dataset
         train_model()
     except Exception as e:
-        logger.error(f"Error appending to dataset: {str(e)}")
+        logger.error(f"Error updating dataset: {str(e)}")
 
 def follow_redirects(url):
-    """Follow URL redirects to get the final destination URL. Returns (final_url, is_reachable)."""
     try:
         response = requests.get(url, headers=HEADERS, allow_redirects=True, timeout=10)
         logger.debug(f"Followed redirects for {url} to {response.url}")
@@ -197,10 +187,9 @@ def follow_redirects(url):
         return url, False
     except Exception as e:
         logger.error(f"Error following redirects for {url}: {str(e)}")
-        return url, True  # Assume reachable unless connection error
+        return url, True
 
 def remove_tracking_params(url):
-    """Remove known tracking parameters from the URL."""
     parsed = urllib.parse.urlparse(url)
     query = urllib.parse.parse_qsl(parsed.query)
     filtered = [(k, v) for k, v in query if k.lower() not in TRACKERS]
@@ -208,7 +197,6 @@ def remove_tracking_params(url):
     return urllib.parse.urlunparse(parsed._replace(query=cleaned_query, fragment=''))
 
 def simplify_known_paths(url):
-    """Simplify URLs for known domains, including YouTube, Amazon, Flipkart, Instagram, and Twitter (X)."""
     parsed = urllib.parse.urlparse(url)
     domain = parsed.netloc.replace("www.", "").lower()
     path = parsed.path
@@ -270,7 +258,6 @@ def simplify_known_paths(url):
     return urllib.parse.urlunparse(parsed._replace(query='', fragment=''))
 
 def generate_summary(url, is_reachable):
-    """Generate a summary of the webpage content using Google Generative AI."""
     if not is_reachable:
         return "Site is not available"
 
@@ -302,7 +289,6 @@ def generate_summary(url, is_reachable):
         return f"Summary error: {str(e)}"
 
 def check_with_virustotal(url):
-    """Check the URL with VirusTotal API and return status, reason, and detection count."""
     if not VT_API_KEY or VT_API_KEY == "your_virustotal_api_key_here":
         logger.error("VirusTotal API key not set")
         return "Error", "VirusTotal API key not set - External", 0, 0
@@ -352,16 +338,12 @@ def check_with_virustotal(url):
         return "Error", f"VirusTotal error: {str(e)} - External", 0, 0
 
 def predict_with_model(url):
-    """Use the trained SVM model to predict the label and confidence for a URL."""
     if classifier is None:
         logger.error("Model not initialized")
         return "Unknown", 0.0
     try:
-        # Predict the label
         label = classifier.predict([url])[0]
-        # Get the decision function score (distance from the hyperplane)
         decision_score = classifier.decision_function([url])[0]
-        # Convert to confidence score (0-100%)
         confidence = decision_to_confidence(decision_score)
         logger.debug(f"Model prediction for {url}: {label} with confidence {confidence:.2f}% (decision score: {decision_score:.2f})")
         return label, confidence
@@ -386,10 +368,8 @@ def analyze():
         if not input_url:
             return jsonify({"error": "Please enter a URL"}), 400
 
-        # Check if URL exists in dataset.csv
         safety_status = check_url_in_csv(input_url)
         if safety_status:
-            # URL found in CSV, return result
             logger.debug(f"URL {input_url} found in dataset with label: {safety_status}")
             final_url, is_reachable = follow_redirects(input_url)
             cleaned_url = remove_tracking_params(final_url)
@@ -403,7 +383,7 @@ def analyze():
             trackers = {k: v for k, v in query_params.items() if k.lower() in TRACKERS}
 
             ml_label = safety_status
-            ml_prob = 100.0  # Since this is from CSV, assume 100% confidence
+            ml_prob = 100.0
             vt_reason = "Retrieved from dataset"
 
             if ml_label == "Spam":
@@ -433,7 +413,6 @@ def analyze():
             })
 
         else:
-            # URL not in CSV, show survey
             logger.debug(f"URL {input_url} not in dataset, showing survey")
             return jsonify({
                 "show_known_form": True,
@@ -450,8 +429,7 @@ def analyze():
                 "show_safety_form": True,
                 "input_url": input_url
             })
-        else:  # Unknown
-            # Process the URL with SVM model first
+        else:
             final_url, is_reachable = follow_redirects(input_url)
             cleaned_url = remove_tracking_params(final_url)
             simplified_url = simplify_known_paths(cleaned_url)
@@ -463,17 +441,13 @@ def analyze():
             query_params = dict(urllib.parse.parse_qsl(parsed.query))
             trackers = {k: v for k, v in query_params.items() if k.lower() in TRACKERS}
 
-            # Predict using SVM model
             ml_label, ml_confidence = predict_with_model(input_url)
 
             if ml_confidence >= 75:
-                # SVM prediction is confident, use it
                 logger.debug(f"Using SVM prediction for {input_url}: {ml_label} with confidence {ml_confidence:.2f}%")
                 vt_reason = "Predicted using SVM model with high confidence - Internal"
-                # Append to CSV and retrain
                 append_to_csv(input_url, ml_label)
             else:
-                # SVM confidence is low, fall back to VirusTotal
                 logger.debug(f"SVM confidence {ml_confidence:.2f}% is below 75%, falling back to VirusTotal for {input_url}")
                 vt_status, vt_reason, positives, total = check_with_virustotal(cleaned_url)
 
@@ -484,10 +458,8 @@ def analyze():
                     ml_label = "Spam"
                     ml_confidence = random.uniform(80, 95)
                 else:
-                    # If VirusTotal fails, use SVM prediction anyway
                     vt_reason = f"Used SVM prediction - Internal"
 
-                # Append to CSV and retrain
                 append_to_csv(input_url, ml_label)
 
             if ml_label == "Spam":
@@ -520,10 +492,8 @@ def analyze():
         safety_status = request.form["safety_status"]
         logger.debug(f"Safety status for {input_url}: {safety_status}")
 
-        # Store the user feedback in dataset.csv
         append_to_csv(input_url, safety_status)
 
-        # Process the URL with minimal analysis (no VirusTotal check)
         final_url, is_reachable = follow_redirects(input_url)
         cleaned_url = remove_tracking_params(final_url)
         simplified_url = simplify_known_paths(cleaned_url)
@@ -535,9 +505,8 @@ def analyze():
         query_params = dict(urllib.parse.parse_qsl(parsed.query))
         trackers = {k: v for k, v in query_params.items() if k.lower() in TRACKERS}
 
-        # Use the user's input as the ML prediction
         ml_label = safety_status
-        ml_confidence = 100.0  # Since this is user-provided, assume 100% confidence
+        ml_confidence = 100.0
         vt_reason = "User-provided feedback"
 
         if ml_label == "Spam":
@@ -578,7 +547,7 @@ def report():
         report_status = request.form["report_status"]
         logger.debug(f"Report for {input_url}: {report_status}")
 
-        # Append the reported status to dataset.csv and retrain the model
+        # Update the label for the URL in dataset.csv and retrain the model
         append_to_csv(input_url, report_status)
 
         return jsonify({
