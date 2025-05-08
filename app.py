@@ -172,7 +172,7 @@ def append_to_csv(url, label):
         # Save the updated dataset
         df.to_csv('dataset.csv', index=False)
         
-        # Retrain the model after updating the dataset
+        # Retrain the model
         train_model()
     except Exception as e:
         logger.error(f"Error updating dataset: {str(e)}")
