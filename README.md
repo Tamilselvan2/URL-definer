@@ -80,17 +80,6 @@ To run the project locally (for development):
 
 ## Contributing
 
-(Placeholder: Details on how to contribute to the project, such as guidelines for pull requests, coding standards, etc., can be added here.)
-
-Example:
 We welcome contributions! Please fork the repository and submit a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change. Ensure your code adheres to the project's coding standards.
-
-## License
-
-(Placeholder: Specify the license under which the project is released.)
-
-Example:
-This project is licensed under the MIT License - see the `LICENSE` file for details. (If you add a `LICENSE` file, ensure it's named appropriately, e.g., `LICENSE` or `LICENSE.md`).
----
 
 *Note: The filenames `requirements.txt` and `app.py` are confirmed from the `ls` output. API key configuration details might need project-specific documentation.*
