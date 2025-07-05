@@ -1,928 +1,1047 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>URL Definer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
 
-        :root {
-            --bg-light: #ffffff;
-            --bg-dark: #000000;
-            --text-light: #333;
-            --text-dark: #eaeaea;
-            --card-light: rgba(255, 255, 255, 0.85);
-            --card-dark: rgba(0, 0, 0, 0.85);
-            --btn-bg-light: #007bff;
-            --btn-bg-dark: #4a90e2;
-            --highlight-text-light: #007bff;
-            --highlight-text-dark: #4a90e2;
-            --alert-error: #f8d7da;
-            --alert-error-text: #721c24;
-        }
+      :root {
+        --bg-light: #ffffff;
+        --bg-dark: #000000;
+        --text-light: #333;
+        --text-dark: #eaeaea;
+        --card-light: rgba(255, 255, 255, 0.85);
+        --card-dark: rgba(0, 0, 0, 0.85);
+        --btn-bg-light: #007bff;
+        --btn-bg-dark: #4a90e2;
+        --highlight-text-light: #007bff;
+        --highlight-text-dark: #4a90e2;
+        --alert-error: #f8d7da;
+        --alert-error-text: #721c24;
+      }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-light) url('/static/images/bright_mode.jpg') no-repeat center center;
-            background-size: cover;
-            color: var(--text-light);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-            margin: 0;
-        }
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--bg-light) url("/static/images/bright_mode.jpg")
+          no-repeat center center;
+        background-size: cover;
+        color: var(--text-light);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+        margin: 0;
+      }
 
-        body.dark {
-            background: var(--bg-dark) url('/static/images/dark_mode.jpg') no-repeat center center;
-            background-size: cover;
-            color: var(--text-dark);
-        }
+      body.dark {
+        background: var(--bg-dark) url("/static/images/dark_mode.jpg") no-repeat
+          center center;
+        background-size: cover;
+        color: var(--text-dark);
+      }
 
-        .parallax-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 200%;
-            background: inherit;
-            z-index: -1;
-            will-change: transform;
-        }
+      .parallax-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 200%;
+        background: inherit;
+        z-index: -1;
+        will-change: transform;
+      }
 
-        .frosty-box {
-            background: rgba(255, 255, 255, 0.4);
-            padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            margin-bottom: 30px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+      .frosty-box {
+        background: rgba(255, 255, 255, 0.4);
+        padding: 15px;
+        border-radius: 10px;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
 
-        body.dark .frosty-box {
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
+      body.dark .frosty-box {
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
 
-        .form-container {
-            background: var(--card-light);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            width: 90%;
-            max-width: 800px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            transition: background 0.3s ease;
-            overflow: hidden;
-            position: relative;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
+      .form-container {
+        background: var(--card-light);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        width: 90%;
+        max-width: 800px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease;
+        overflow: hidden;
+        position: relative;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
 
-        body.dark .form-container {
-            background: var(--card-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+      body.dark .form-container {
+        background: var(--card-dark);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
-        input[type="text"] {
-            width: 70%;
-            min-width: 200px;
-            padding: 12px;
-            border-radius: 6px;
-            border: none;
-            margin-bottom: 10px;
-            font-size: 16px;
-            box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--text-light);
-            flex-grow: 1;
-        }
+      input[type="text"] {
+        width: 70%;
+        min-width: 200px;
+        padding: 12px;
+        border-radius: 6px;
+        border: none;
+        margin-bottom: 10px;
+        font-size: 16px;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--text-light);
+        flex-grow: 1;
+      }
 
-        body.dark input[type="text"] {
-            background: rgba(0, 0, 0, 0.9);
-            color: var(--text-dark);
-        }
+      body.dark input[type="text"] {
+        background: rgba(0, 0, 0, 0.9);
+        color: var(--text-dark);
+      }
 
-        button {
-            padding: 10px 20px;
-            border: none;
-            background: var(--btn-bg-light);
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s ease, transform 0.2s ease;
-            font-size: 16px;
-            white-space: nowrap;
-        }
+      button {
+        padding: 10px 20px;
+        border: none;
+        background: var(--btn-bg-light);
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        transition:
+          background 0.3s ease,
+          transform 0.2s ease;
+        font-size: 16px;
+        white-space: nowrap;
+      }
 
-        button:hover {
-            background: #0056b3;
-            transform: scale(1.05);
-        }
+      button:hover {
+        background: #0056b3;
+        transform: scale(1.05);
+      }
 
-        body.dark button {
-            background: var(--btn-bg-dark);
-        }
+      body.dark button {
+        background: var(--btn-bg-dark);
+      }
 
+      .survey-container {
+        background: var(--card-light);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        width: 90%;
+        max-width: 800px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease;
+        position: relative;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+      }
+
+      body.dark .survey-container {
+        background: var(--card-dark);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .survey-container select {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        margin: 10px;
+      }
+
+      .main-container {
+        display: flex;
+        gap: 30px;
+        width: 100%;
+        max-width: 1100px;
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      .analysis-box,
+      .summary-box {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.4);
+        padding: 15px;
+        border-radius: 10px;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      body.dark .analysis-box,
+      body.dark .summary-box {
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .analysis-content,
+      .summary-content {
+        background: var(--card-light);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease;
+        position: relative;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      body.dark .analysis-content,
+      body.dark .summary-content {
+        background: var(--card-dark);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .highlight {
+        color: var(--highlight-text-light);
+        font-family: monospace;
+      }
+
+      body.dark .highlight {
+        color: var(--highlight-text-dark);
+      }
+
+      .url-text,
+      .breakdown-text {
+        word-break: break-all;
+        max-width: 100%;
+        width: 100%;
+        overflow-wrap: break-word;
+        margin-top: 5px;
+        display: inline-block;
+      }
+
+      .left .url-container,
+      .left .cleaned-url-container {
+        max-width: 500px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .query-params-container ul {
+        list-style-type: square;
+        padding-left: 20px;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .status {
+        font-weight: bold;
+      }
+
+      .safe {
+        color: green;
+      }
+
+      .malicious {
+        color: red;
+      }
+
+      .error {
+        color: orange;
+      }
+
+      h2,
+      h3 {
+        color: var(--highlight-text-light);
+      }
+
+      body.dark h2,
+      body.dark h3 {
+        color: var(--text-dark);
+      }
+
+      pre {
+        white-space: pre-wrap;
+        font-family: "Courier New", Courier, monospace;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 4px;
+      }
+
+      body.dark pre {
+        background: rgba(0, 0, 0, 0.9);
+      }
+
+      .bottom-sections {
+        margin-top: 30px;
+        width: 100%;
+        max-width: 1100px;
+      }
+
+      .frosty-box.bottom-box {
+        margin-bottom: 30px;
+      }
+
+      .bottom-sections .section {
+        background: var(--card-light);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease;
+        position: relative;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      body.dark .bottom-sections .section {
+        background: var(--card-dark);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .theme-switch {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .theme-switch input {
+        display: none;
+      }
+
+      .theme-switch label {
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+        background: #ccc;
+        border-radius: 20px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .theme-switch label::after {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        top: 1px;
+        left: 1px;
+        transition: transform 0.3s ease;
+      }
+
+      .theme-switch input:checked + label {
+        background: #4a90e2;
+      }
+
+      .theme-switch input:checked + label::after {
+        transform: translateX(20px);
+      }
+
+      .theme-switch .icon {
+        font-size: 18px;
+        color: var(--text-light);
+      }
+
+      body.dark .theme-switch .icon {
+        color: var(--text-dark);
+      }
+
+      .url-tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+      }
+
+      .url-tooltip .tooltip-text {
+        visibility: hidden;
+        width: 400px;
+        max-width: 90vw;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        padding: 10px;
+        border-radius: 4px;
+        position: fixed;
+        z-index: 1000;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        word-break: break-all;
+        font-family: monospace;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .url-tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .copy-btn {
+        margin-left: 10px;
+        padding: 8px 12px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .copy-btn:hover {
+        background-color: #218838;
+      }
+
+      #loading {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .fa-spinner {
+        font-size: 1.5em;
+        color: var(--btn-bg-light);
+      }
+
+      body.dark .fa-spinner {
+        color: var(--btn-bg-dark);
+      }
+
+      .alert {
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+      }
+
+      .error {
+        background-color: var(--alert-error);
+        color: var(--alert-error-text);
+        border: 1px solid #f5c6cb;
+      }
+
+      .collapsible {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        cursor: pointer;
+        color: var(--highlight-text-light);
+        margin-bottom: 10px;
+      }
+
+      body.dark .collapsible {
+        color: var(--text-dark);
+      }
+
+      .collapse-content {
+        display: none;
+        max-width: 500px;
+        box-sizing: border-box;
+        padding: 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        background: var(--card-light);
+        transition: background 0.3s ease;
+      }
+
+      body.dark .collapse-content {
+        background: var(--card-dark);
+        border-color: #444;
+      }
+
+      @media (max-width: 768px) {
+        .form-container,
         .survey-container {
-            background: var(--card-light);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            width: 90%;
-            max-width: 800px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            transition: background 0.3s ease;
-            position: relative;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
+          flex-direction: column;
+          align-items: stretch;
         }
-
-        body.dark .survey-container {
-            background: var(--card-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        input[type="text"],
+        select {
+          width: 100%;
+          margin-bottom: 15px;
         }
-
-        .survey-container select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            margin: 10px;
+        button {
+          width: 100%;
+          max-width: 200px;
+          margin: 0 auto;
         }
-
         .main-container {
-            display: flex;
-            gap: 30px;
-            width: 100%;
-            max-width: 1100px;
-            animation: fadeIn 0.5s ease-out;
+          flex-direction: column;
         }
-
+        .left,
+        .right {
+          width: 100%;
+        }
         .frosty-box.main-box {
-            flex: 1;
+          width: 100%;
         }
+      }
 
-        .left, .right {
-            flex: 1;
-            background: var(--card-light);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            transition: background 0.3s ease;
-            position: relative;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-
-        body.dark .left, body.dark .right {
-            background: var(--card-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-
-        .highlight {
-            color: var(--highlight-text-light);
-            font-family: monospace;
-        }
-
-        body.dark .highlight {
-            color: var(--highlight-text-dark);
-        }
-
-        .url-text, .breakdown-text {
-            word-break: break-all;
-            max-width: 100%;
-            width: 100%;
-            overflow-wrap: break-word;
-            margin-top: 5px;
-            display: inline-block;
-        }
-
-        .left .url-container, .left .cleaned-url-container {
-            max-width: 500px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .query-params-container ul {
-            list-style-type: square;
-            padding-left: 20px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .status {
-            font-weight: bold;
-        }
-
-        .safe {
-            color: green;
-        }
-
-        .malicious {
-            color: red;
-        }
-
-        .error {
-            color: orange;
-        }
-
-        h2, h3 {
-            color: var(--highlight-text-light);
-        }
-
-        body.dark h2, body.dark h3 {
-            color: var(--text-dark);
-        }
-
-        pre {
-            white-space: pre-wrap;
-            font-family: 'Courier New', Courier, monospace;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        body.dark pre {
-            background: rgba(0, 0, 0, 0.9);
-        }
-
-        .bottom-sections {
-            margin-top: 30px;
-            width: 100%;
-            max-width: 1100px;
-        }
-
-        .frosty-box.bottom-box {
-            margin-bottom: 30px;
-        }
-
-        .bottom-sections .section {
-            background: var(--card-light);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            transition: background 0.3s ease;
-            position: relative;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        body.dark .bottom-sections .section {
-            background: var(--card-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .theme-switch {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .theme-switch input {
-            display: none;
-        }
-
-        .theme-switch label {
-            display: inline-block;
-            width: 40px;
-            height: 20px;
-            background: #ccc;
-            border-radius: 20px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .theme-switch label::after {
-            content: '';
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            background: #fff;
-            border-radius: 50%;
-            top: 1px;
-            left: 1px;
-            transition: transform 0.3s ease;
-        }
-
-        .theme-switch input:checked + label {
-            background: #4a90e2;
-        }
-
-        .theme-switch input:checked + label::after {
-            transform: translateX(20px);
-        }
-
-        .theme-switch .icon {
-            font-size: 18px;
-            color: var(--text-light);
-        }
-
-        body.dark .theme-switch .icon {
-            color: var(--text-dark);
-        }
-
-        .url-tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-        }
-
-        .url-tooltip .tooltip-text {
-            visibility: hidden;
-            width: 400px;
-            max-width: 90vw;
-            background-color: #333;
-            color: #fff;
-            text-align: left;
-            padding: 10px;
-            border-radius: 4px;
-            position: fixed;
-            z-index: 1000;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .url-tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .copy-btn {
-            margin-left: 10px;
-            padding: 8px 12px;
-            background-color: #28a745;
-            color: white;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .copy-btn:hover {
-            background-color: #218838;
-        }
-
-        #loading {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .fa-spinner {
-            font-size: 1.5em;
-            color: var(--btn-bg-light);
-        }
-
-        body.dark .fa-spinner {
-            color: var(--btn-bg-dark);
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .error {
-            background-color: var(--alert-error);
-            color: var(--alert-error-text);
-            border: 1px solid #f5c6cb;
-        }
-
-        .collapsible {
-            background: none;
-            border: none;
-            font-size: 1.2em;
-            cursor: pointer;
-            color: var(--highlight-text-light);
-            margin-bottom: 10px;
-        }
-
-        body.dark .collapsible {
-            color: var(--text-dark);
-        }
-
-        .collapse-content {
-            display: none;
-            max-width: 500px;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            background: var(--card-light);
-            transition: background 0.3s ease;
-        }
-
-        body.dark .collapse-content {
-            background: var(--card-dark);
-            border-color: #444;
-        }
-
-        @media (max-width: 768px) {
-            .form-container, .survey-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            input[type="text"], select {
-                width: 100%;
-                margin-bottom: 15px;
-            }
-            button {
-                width: 100%;
-                max-width: 200px;
-                margin: 0 auto;
-            }
-            .main-container {
-                flex-direction: column;
-            }
-            .left, .right {
-                width: 100%;
-            }
-            .frosty-box.main-box {
-                width: 100%;
-            }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="parallax-bg"></div>
     <div class="theme-switch">
-        <span class="icon">☀️</span>
-        <input type="checkbox" id="themeToggle">
-        <label for="themeToggle"></label>
-        <span class="icon">🌙</span>
+      <span class="icon">☀️</span>
+      <input type="checkbox" id="themeToggle" />
+      <label for="themeToggle"></label>
+      <span class="icon">🌙</span>
     </div>
 
     <h1>URL Definer</h1>
 
     <div class="frosty-box">
-        <div class="form-container">
-            <form id="urlForm" aria-label="URL analysis form">
-                <input type="text" name="url" placeholder="Enter a URL..." required aria-label="URL input">
-                <button type="submit" aria-label="Analyze URL">Analyze</button>
-            </form>
-            <div id="loading">
-                <i class="fas fa-spinner fa-spin"></i> Analyzing...
-            </div>
-            <div id="error" class="alert error" style="display: none;"></div>
+      <div class="form-container">
+        <form id="urlForm" aria-label="URL analysis form">
+          <input
+            type="text"
+            name="url"
+            placeholder="Enter a URL..."
+            required
+            aria-label="URL input"
+          />
+          <button type="submit" aria-label="Analyze URL">Analyze</button>
+        </form>
+        <div id="loading">
+          <i class="fas fa-spinner fa-spin"></i> Analyzing...
         </div>
+        <div id="error" class="alert error" style="display: none"></div>
+      </div>
     </div>
 
-    <div id="knownFormContainer" class="frosty-box" style="display: none;">
-        <div class="survey-container">
-            <form id="knownForm" aria-label="Known status form">
-                <input type="hidden" name="input_url" id="knownInputUrl">
-                <p>Do you know the legitimacy of this site?</p>
-                <select name="known_status" required aria-label="Known or Unknown">
-                    <option value="" disabled selected>Select an option</option>
-                    <option value="Known">Known</option>
-                    <option value="Unknown">Unknown</option>
-                </select>
-                <button type="submit" aria-label="Submit known status">Submit</button>
-            </form>
-        </div>
+    <div id="knownFormContainer" class="frosty-box" style="display: none">
+      <div class="survey-container">
+        <form id="knownForm" aria-label="Known status form">
+          <input type="hidden" name="input_url" id="knownInputUrl" />
+          <p>Do you know the legitimacy of this site?</p>
+          <select name="known_status" required aria-label="Known or Unknown">
+            <option value="" disabled selected>Select an option</option>
+            <option value="Known">Known</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+          <button type="submit" aria-label="Submit known status">Submit</button>
+        </form>
+      </div>
     </div>
 
-    <div id="safetyFormContainer" class="frosty-box" style="display: none;">
-        <div class="survey-container">
-            <form id="safetyForm" aria-label="Safety status form">
-                <input type="hidden" name="input_url" id="safetyInputUrl">
-                <p>Is this site safe or unsafe?</p>
-                <select name="safety_status" required aria-label="Safe or Unsafe">
-                    <option value="" disabled selected>Select an option</option>
-                    <option value="Safe">Safe</option>
-                    <option value="Spam">Unsafe</option>
-                </select>
-                <button type="submit" aria-label="Submit safety status">Submit</button>
-            </form>
-        </div>
+    <div id="safetyFormContainer" class="frosty-box" style="display: none">
+      <div class="survey-container">
+        <form id="safetyForm" aria-label="Safety status form">
+          <input type="hidden" name="input_url" id="safetyInputUrl" />
+          <p>Is this site safe or unsafe?</p>
+          <select name="safety_status" required aria-label="Safe or Unsafe">
+            <option value="" disabled selected>Select an option</option>
+            <option value="Safe">Safe</option>
+            <option value="Spam">Unsafe</option>
+          </select>
+          <button type="submit" aria-label="Submit safety status">
+            Submit
+          </button>
+        </form>
+      </div>
     </div>
 
-    <div id="resultContainer" class="frosty-box main-box" style="display: none;">
-        <div class="main-container">
-            <div class="left">
-                <h2>URL Analysis</h2>
-                <p><strong>Original URL:</strong></p>
-                <div class="url-container">
-                    <p class="url-text highlight" id="originalUrl"></p>
-                </div>
-                <p><strong>Final URL:</strong></p>
-                <div class="cleaned-url-container">
-                    <p class="url-text highlight" id="cleanedUrl"></p>
-                    <button id="copyBtn" class="copy-btn">Copy</button>
-                </div>
-                <p><strong>Is Valid:</strong> <span class="status" id="validStatus"></span></p>
-                <p><strong>Spam (Rule-Based):</strong> <span class="status" id="spamStatus"></span></p>
-                <p><strong>ML Prediction:</strong> 
-                    <span class="status" id="mlPrediction"></span>
-                </p>
-                <p id="fromCsvNote" style="display: none;"><em>Note: This result was retrieved from previous user feedback or analysis.</em></p>
-                <hr>
-                <button class="collapsible">URL Breakdown</button>
-                <div class="collapse-content">
-                    <p><strong>Protocol:</strong> <span class="breakdown-text" id="protocol"></span></p>
-                    <p><strong>Domain:</strong> <span class="breakdown-text" id="domain"></span></p>
-                    <p><strong>Path:</strong> 
-                        <span class="url-tooltip breakdown-text" id="path"></span>
-                    </p>
-                </div>
-                <button class="collapsible">Query Parameters</button>
-                <div class="collapse-content" id="queryParamsContainer">
-                    <ul id="queryParamsList"></ul>
-                </div>
-            </div>
-            <div class="right">
-                <h2>Page Summary</h2>
-                <p id="summaryStatus">Summarizing for you</p>
-                <pre id="summaryOutput"></pre>
-            </div>
+    <div id="resultContainer" class="frosty-box main-box" style="display: none">
+      <div class="main-container">
+        <div class="left">
+          <h2>URL Analysis</h2>
+          <p><strong>Original URL:</strong></p>
+          <div class="url-container">
+            <p class="url-text highlight" id="originalUrl"></p>
+          </div>
+          <p><strong>Final URL:</strong></p>
+          <div class="cleaned-url-container">
+            <p class="url-text highlight" id="cleanedUrl"></p>
+            <button id="copyBtn" class="copy-btn">Copy</button>
+          </div>
+          <p>
+            <strong>Is Valid:</strong>
+            <span class="status" id="validStatus"></span>
+          </p>
+          <p>
+            <strong>Spam (Rule-Based):</strong>
+            <span class="status" id="spamStatus"></span>
+          </p>
+          <p>
+            <strong>ML Prediction:</strong>
+            <span class="status" id="mlPrediction"></span>
+          </p>
+          <p id="fromCsvNote" style="display: none">
+            <em
+              >Note: This result was retrieved from previous user feedback or
+              analysis.</em
+            >
+          </p>
+          <hr />
+          <button class="collapsible">URL Breakdown</button>
+          <div class="collapse-content">
+            <p>
+              <strong>Protocol:</strong>
+              <span class="breakdown-text" id="protocol"></span>
+            </p>
+            <p>
+              <strong>Domain:</strong>
+              <span class="breakdown-text" id="domain"></span>
+            </p>
+            <p>
+              <strong>Path:</strong>
+              <span class="url-tooltip breakdown-text" id="path"></span>
+            </p>
+          </div>
+          <button class="collapsible">Query Parameters</button>
+          <div class="collapse-content" id="queryParamsContainer">
+            <ul id="queryParamsList"></ul>
+          </div>
         </div>
+        <div class="right">
+          <h2>Page Summary</h2>
+          <p id="summaryStatus">Summarizing for you</p>
+          <pre id="summaryOutput"></pre>
+        </div>
+      </div>
     </div>
 
-    <div id="feedbackContainer" class="frosty-box" style="display: none;">
-        <div class="survey-container">
-            <p>Thank you for your feedback! It has been stored for future reference.</p>
-        </div>
+    <div id="feedbackContainer" class="frosty-box" style="display: none">
+      <div class="survey-container">
+        <p>
+          Thank you for your feedback! It has been stored for future reference.
+        </p>
+      </div>
     </div>
 
-    <div id="reportFormContainer" class="frosty-box" style="display: none;">
-        <div class="survey-container">
-            <form id="reportForm" aria-label="Report status form">
-                <input type="hidden" name="input_url" id="reportInputUrl">
-                <p>Help improve our model: Is this site safe or unsafe?</p>
-                <select name="report_status" required aria-label="Safe or Unsafe">
-                    <option value="" disabled selected>Select an option</option>
-                    <option value="Safe">Safe</option>
-                    <option value="Spam">Unsafe</option>
-                </select>
-                <button type="submit" aria-label="Submit report status">Report</button>
-            </form>
-            <div id="reportMessage" style="display: none; margin-top: 10px;"></div>
-        </div>
+    <div id="reportFormContainer" class="frosty-box" style="display: none">
+      <div class="survey-container">
+        <form id="reportForm" aria-label="Report status form">
+          <input type="hidden" name="input_url" id="reportInputUrl" />
+          <p>Help improve our model: Is this site safe or unsafe?</p>
+          <select name="report_status" required aria-label="Safe or Unsafe">
+            <option value="" disabled selected>Select an option</option>
+            <option value="Safe">Safe</option>
+            <option value="Spam">Unsafe</option>
+          </select>
+          <button type="submit" aria-label="Submit report status">
+            Report
+          </button>
+        </form>
+        <div id="reportMessage" style="display: none; margin-top: 10px"></div>
+      </div>
     </div>
 
     <div class="frosty-box bottom-box">
-        <div class="bottom-sections">
-            <div class="section">
-                <h2>Why Use This Tool?</h2>
-                <p>This tool helps remove trackers and parameters from long and suspicious URLs, making them cleaner, shorter, and safer to share. It also detects if a link is valid, spammy, or malicious. Protects your and the recipient's privacy</p>
-            </div>
-            <div class="section">
-                <h2>How It Works</h2>
-                <p>When you paste a URL, we:</p>
-                <ul>
-                    <li>Follow redirects to the final destination</li>
-                    <li>Remove tracking parameters like <code>utm_source</code>, <code>fbclid</code>, etc.</li>
-                    <li>Check if the link is live and reachable</li>
-                    <li>Use rules and ML to predict if the link is spam or safe</li>
-                </ul>
-            </div>
-            <div class="section">
-                <h2>About This Project</h2>
-                <p>This project is built using Python, Flask, and basic machine learning to demonstrate how links can be analyzed and cleaned for safety and simplicity. It's a useful tool for researchers, students, and general users who want more control over the links they click or share.</p>
-            </div>
+      <div class="bottom-sections">
+        <div class="section">
+          <h2>Why Use This Tool?</h2>
+          <p>
+            This tool helps remove trackers and parameters from long and
+            suspicious URLs, making them cleaner, shorter, and safer to share.
+            It also detects if a link is valid, spammy, or malicious. Protects
+            your and the recipient's privacy
+          </p>
         </div>
+        <div class="section">
+          <h2>How It Works</h2>
+          <p>When you paste a URL, we:</p>
+          <ul>
+            <li>Follow redirects to the final destination</li>
+            <li>
+              Remove tracking parameters like <code>utm_source</code>,
+              <code>fbclid</code>, etc.
+            </li>
+            <li>Check if the link is live and reachable</li>
+            <li>Use rules and ML to predict if the link is spam or safe</li>
+          </ul>
+        </div>
+        <div class="section">
+          <h2>About This Project</h2>
+          <p>
+            This project is built using Python, Flask, and basic machine
+            learning to demonstrate how links can be analyzed and cleaned for
+            safety and simplicity. It's a useful tool for researchers, students,
+            and general users who want more control over the links they click or
+            share.
+          </p>
+        </div>
+      </div>
     </div>
 
     <footer>
-        <p>URL Definer | Developed by Team8❤️</p>
+      <p>URL Definer | Developed by Team8❤️</p>
     </footer>
 
     <script>
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
+      function showLoading(show) {
+        document.getElementById("loading").style.display = show
+          ? "block"
+          : "none";
+      }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = `Error: ${message}`;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
+      function showError(message) {
+        const errorDiv = document.getElementById("error");
+        errorDiv.textContent = `Error: ${message}`;
+        errorDiv.style.display = "block";
+        setTimeout(() => {
+          errorDiv.style.display = "none";
+        }, 5000);
+      }
 
-        function resetForms() {
-            document.getElementById('knownFormContainer').style.display = 'none';
-            document.getElementById('safetyFormContainer').style.display = 'none';
-            document.getElementById('resultContainer').style.display = 'none';
-            document.getElementById('feedbackContainer').style.display = 'none';
-            document.getElementById('reportFormContainer').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
-        }
+      function resetForms() {
+        document.getElementById("knownFormContainer").style.display = "none";
+        document.getElementById("safetyFormContainer").style.display = "none";
+        document.getElementById("resultContainer").style.display = "none";
+        document.getElementById("feedbackContainer").style.display = "none";
+        document.getElementById("reportFormContainer").style.display = "none";
+        document.getElementById("error").style.display = "none";
+      }
 
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
+      function escapeHtml(unsafe) {
+        return unsafe
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
 
-        document.getElementById('urlForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            resetForms();
-            showLoading(true);
+      document
+        .getElementById("urlForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          resetForms();
+          showLoading(true);
 
-            const formData = new FormData(e.target);
-            try {
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+          const formData = new FormData(e.target);
+          try {
+            const response = await fetch("/analyze", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
 
-                if (data.error) {
-                    showError(data.error);
-                    showLoading(false);
-                    return;
-                }
-
-                if (data.show_known_form) {
-                    document.getElementById('knownInputUrl').value = data.input_url;
-                    document.getElementById('knownFormContainer').style.display = 'block';
-                } else if (data.result) {
-                    displayResult(data);
-                }
-
-                showLoading(false);
-            } catch (err) {
-                showError('Failed to analyze URL');
-                showLoading(false);
+            if (data.error) {
+              showError(data.error);
+              showLoading(false);
+              return;
             }
+
+            if (data.show_known_form) {
+              document.getElementById("knownInputUrl").value = data.input_url;
+              document.getElementById("knownFormContainer").style.display =
+                "block";
+            } else if (data.result) {
+              displayResult(data);
+            }
+
+            showLoading(false);
+          } catch (err) {
+            showError("Failed to analyze URL");
+            showLoading(false);
+          }
         });
 
-        document.getElementById('knownForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            resetForms();
-            showLoading(true);
+      document
+        .getElementById("knownForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          resetForms();
+          showLoading(true);
 
-            const formData = new FormData(e.target);
-            try {
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+          const formData = new FormData(e.target);
+          try {
+            const response = await fetch("/analyze", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
 
-                if (data.error) {
-                    showError(data.error);
-                    showLoading(false);
-                    return;
-                }
-
-                if (data.show_safety_form) {
-                    document.getElementById('safetyInputUrl').value = data.input_url;
-                    document.getElementById('safetyFormContainer').style.display = 'block';
-                } else if (data.result) {
-                    displayResult(data);
-                }
-
-                showLoading(false);
-            } catch (err) {
-                showError('Failed to process survey');
-                showLoading(false);
+            if (data.error) {
+              showError(data.error);
+              showLoading(false);
+              return;
             }
+
+            if (data.show_safety_form) {
+              document.getElementById("safetyInputUrl").value = data.input_url;
+              document.getElementById("safetyFormContainer").style.display =
+                "block";
+            } else if (data.result) {
+              displayResult(data);
+            }
+
+            showLoading(false);
+          } catch (err) {
+            showError("Failed to process survey");
+            showLoading(false);
+          }
         });
 
-        document.getElementById('safetyForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            resetForms();
-            showLoading(true);
+      document
+        .getElementById("safetyForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          resetForms();
+          showLoading(true);
 
-            const formData = new FormData(e.target);
-            try {
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+          const formData = new FormData(e.target);
+          try {
+            const response = await fetch("/analyze", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
 
-                if (data.error) {
-                    showError(data.error);
-                    showLoading(false);
-                    return;
-                }
-
-                if (data.feedback_submitted) {
-                    document.getElementById('feedbackContainer').style.display = 'block';
-                }
-                displayResult(data);
-                showLoading(false);
-            } catch (err) {
-                showError('Failed to process feedback');
-                showLoading(false);
+            if (data.error) {
+              showError(data.error);
+              showLoading(false);
+              return;
             }
+
+            if (data.feedback_submitted) {
+              document.getElementById("feedbackContainer").style.display =
+                "block";
+            }
+            displayResult(data);
+            showLoading(false);
+          } catch (err) {
+            showError("Failed to process feedback");
+            showLoading(false);
+          }
         });
 
-        document.getElementById('reportForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            showLoading(true);
+      document
+        .getElementById("reportForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          showLoading(true);
 
-            const formData = new FormData(e.target);
-            try {
-                const response = await fetch('/report', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+          const formData = new FormData(e.target);
+          try {
+            const response = await fetch("/report", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
 
-                if (data.error) {
-                    showError(data.error);
-                    showLoading(false);
-                    return;
-                }
-
-                const reportMessage = document.getElementById('reportMessage');
-                reportMessage.textContent = data.message;
-                reportMessage.style.display = 'block';
-                document.getElementById('reportForm').style.display = 'none';
-                showLoading(false);
-            } catch (err) {
-                showError('Failed to submit report');
-                showLoading(false);
+            if (data.error) {
+              showError(data.error);
+              showLoading(false);
+              return;
             }
+
+            const reportMessage = document.getElementById("reportMessage");
+            reportMessage.textContent = data.message;
+            reportMessage.style.display = "block";
+            document.getElementById("reportForm").style.display = "none";
+            showLoading(false);
+          } catch (err) {
+            showError("Failed to submit report");
+            showLoading(false);
+          }
         });
 
-        function displayResult(data) {
-            const result = data.result;
-            document.getElementById('resultContainer').style.display = 'block';
+      function displayResult(data) {
+        const result = data.result;
+        document.getElementById("resultContainer").style.display = "block";
 
-            const original = escapeHtml(result.original);
-            const originalDisplay = original.length > 50 ? original.substring(0, 50) + '...' : original;
-            document.getElementById('originalUrl').innerHTML = `
+        const original = escapeHtml(result.original);
+        const originalDisplay =
+          original.length > 50 ? original.substring(0, 50) + "..." : original;
+        document.getElementById("originalUrl").innerHTML = `
                 <span class="url-tooltip">
                     ${originalDisplay}
                     <span class="tooltip-text">${original}</span>
                 </span>
             `;
 
-            const cleaned = escapeHtml(result.cleaned);
-            document.getElementById('cleanedUrl').textContent = '';
-            let index = 0;
-            function typeEffect() {
-                if (index < cleaned.length) {
-                    document.getElementById('cleanedUrl').textContent += cleaned.charAt(index);
-                    index++;
-                    setTimeout(typeEffect, 40);
-                } else {
-                    document.getElementById('cleanedUrl').innerHTML = `
+        const cleaned = escapeHtml(result.cleaned);
+        document.getElementById("cleanedUrl").textContent = "";
+        let index = 0;
+        function typeEffect() {
+          if (index < cleaned.length) {
+            document.getElementById("cleanedUrl").textContent +=
+              cleaned.charAt(index);
+            index++;
+            setTimeout(typeEffect, 40);
+          } else {
+            document.getElementById("cleanedUrl").innerHTML = `
                         <a href="${cleaned}" target="_blank" class="highlight url-text">${cleaned}</a>
                     `;
-                }
-            }
-            setTimeout(typeEffect, 400);
+          }
+        }
+        setTimeout(typeEffect, 400);
 
-            document.getElementById('copyBtn').onclick = () => {
-                navigator.clipboard.writeText(result.cleaned).then(() => {
-                    alert("URL copied to clipboard!");
-                });
-            };
+        document.getElementById("copyBtn").onclick = () => {
+          navigator.clipboard.writeText(result.cleaned).then(() => {
+            alert("URL copied to clipboard!");
+          });
+        };
 
-            document.getElementById('validStatus').textContent = result.valid ? 'Yes' : 'No';
-            document.getElementById('spamStatus').textContent = result.spam ? 'Yes' : 'No';
-            document.getElementById('mlPrediction').className = 'status ' + 
-                (result.ml_label === 'Safe' ? 'safe' : result.ml_label === 'Spam' ? 'malicious' : 'error');
-            document.getElementById('mlPrediction').textContent = 
-                `${result.ml_label} (Confidence: ${result.ml_prob}%) - ${result.vt_reason}`;
+        document.getElementById("validStatus").textContent = result.valid
+          ? "Yes"
+          : "No";
+        document.getElementById("spamStatus").textContent = result.spam
+          ? "Yes"
+          : "No";
+        document.getElementById("mlPrediction").className =
+          "status " +
+          (result.ml_label === "Safe"
+            ? "safe"
+            : result.ml_label === "Spam"
+              ? "malicious"
+              : "error");
+        document.getElementById("mlPrediction").textContent =
+          `${result.ml_label} (Confidence: ${result.ml_prob}%) - ${result.vt_reason}`;
 
-            if (data.from_csv) {
-                document.getElementById('fromCsvNote').style.display = 'block';
-            }
+        if (data.from_csv) {
+          document.getElementById("fromCsvNote").style.display = "block";
+        }
 
-            document.getElementById('protocol').textContent = result.protocol;
-            document.getElementById('domain').textContent = result.domain;
-            const path = escapeHtml(result.path);
-            const pathDisplay = path.length > 50 ? path.substring(0, 50) + '...' : path;
-            document.getElementById('path').innerHTML = `
+        document.getElementById("protocol").textContent = result.protocol;
+        document.getElementById("domain").textContent = result.domain;
+        const path = escapeHtml(result.path);
+        const pathDisplay =
+          path.length > 50 ? path.substring(0, 50) + "..." : path;
+        document.getElementById("path").innerHTML = `
                 <span class="url-tooltip breakdown-text">
                     ${pathDisplay}
                     <span class="tooltip-text">${path}</span>
                 </span>
             `;
 
-            const queryParamsList = document.getElementById('queryParamsList');
-            queryParamsList.innerHTML = '';
-            if (Object.keys(result.query_params).length > 0) {
-                for (const [key, value] of Object.entries(result.query_params)) {
-                    const k = escapeHtml(key);
-                    const v = escapeHtml(value);
-                    const kDisplay = k.length > 60 ? k.substring(0, 50) + '...' : k;
-                    const vDisplay = v.length > 60 ? v.substring(0, 50) + '...' : v;
-                    const li = document.createElement('li');
-                    li.innerHTML = `
+        const queryParamsList = document.getElementById("queryParamsList");
+        queryParamsList.innerHTML = "";
+        if (Object.keys(result.query_params).length > 0) {
+          for (const [key, value] of Object.entries(result.query_params)) {
+            const k = escapeHtml(key);
+            const v = escapeHtml(value);
+            const kDisplay = k.length > 60 ? k.substring(0, 50) + "..." : k;
+            const vDisplay = v.length > 60 ? v.substring(0, 50) + "..." : v;
+            const li = document.createElement("li");
+            li.innerHTML = `
                         <span class="url-tooltip breakdown-text">
                             ${kDisplay}
                             <span class="tooltip-text">${k}</span>
-                        </span>: 
+                        </span>:
                         <span class="url-tooltip breakdown-text">
                             ${vDisplay}
                             <span class="tooltip-text">${v}</span>
                         </span>
                     `;
-                    queryParamsList.appendChild(li);
-                }
+            queryParamsList.appendChild(li);
+          }
+        } else {
+          queryParamsList.innerHTML = "<p>No query parameters</p>";
+        }
+
+        const summary = data.summary;
+        const summaryOutput = document.getElementById("summaryOutput");
+        const summaryStatus = document.getElementById("summaryStatus");
+        if (
+          [
+            "YouTube page cannot be summarized",
+            "Instagram page cannot be summarized",
+            "Twitter page cannot be summarized",
+            "Site cannot be summarized as this seems to be malicious",
+            "Site is not available",
+          ].includes(summary)
+        ) {
+          summaryStatus.style.display = "none";
+          summaryOutput.textContent = summary;
+        } else {
+          summaryStatus.textContent = "Summarizing for you";
+          summaryOutput.textContent = "";
+          let summaryIndex = 0;
+          function typeSummary() {
+            if (summaryIndex < summary.length) {
+              summaryOutput.textContent += summary.charAt(summaryIndex);
+              summaryIndex++;
+              setTimeout(typeSummary, 15);
             } else {
-                queryParamsList.innerHTML = '<p>No query parameters</p>';
+              summaryStatus.textContent = "Summarized";
             }
-
-            const summary = data.summary;
-            const summaryOutput = document.getElementById('summaryOutput');
-            const summaryStatus = document.getElementById('summaryStatus');
-            if (['YouTube page cannot be summarized', 'Instagram page cannot be summarized', 
-                 'Twitter page cannot be summarized', 'Site cannot be summarized as this seems to be malicious',
-                 'Site is not available'].includes(summary)) {
-                summaryStatus.style.display = 'none';
-                summaryOutput.textContent = summary;
-            } else {
-                summaryStatus.textContent = 'Summarizing for you';
-                summaryOutput.textContent = '';
-                let summaryIndex = 0;
-                function typeSummary() {
-                    if (summaryIndex < summary.length) {
-                        summaryOutput.textContent += summary.charAt(summaryIndex);
-                        summaryIndex++;
-                        setTimeout(typeSummary, 15);
-                    } else {
-                        summaryStatus.textContent = 'Summarized';
-                    }
-                }
-                setTimeout(typeSummary, 1000);
-            }
-
-            if (data.show_report_form) {
-                document.getElementById('reportFormContainer').style.display = 'block';
-                document.getElementById('reportInputUrl').value = result.original;
-                document.getElementById('reportMessage').style.display = 'none';
-                document.getElementById('reportForm').style.display = 'block';
-            }
+          }
+          setTimeout(typeSummary, 1000);
         }
 
-        document.querySelectorAll('.collapsible').forEach(button => {
-            button.addEventListener('click', () => {
-                const content = button.nextElementSibling;
-                content.style.display = content.style.display === 'block' ? 'none' : 'block';
-            });
+        if (data.show_report_form) {
+          document.getElementById("reportFormContainer").style.display =
+            "block";
+          document.getElementById("reportInputUrl").value = result.original;
+          document.getElementById("reportMessage").style.display = "none";
+          document.getElementById("reportForm").style.display = "block";
+        }
+      }
+
+      document.querySelectorAll(".collapsible").forEach((button) => {
+        button.addEventListener("click", () => {
+          const content = button.nextElementSibling;
+          content.style.display =
+            content.style.display === "block" ? "none" : "block";
         });
+      });
 
-        const toggle = document.getElementById("themeToggle");
-        const saved = localStorage.getItem("theme");
-        if (saved === "dark") {
-            document.body.classList.add("dark");
-            toggle.checked = true;
-        }
-        toggle.addEventListener("change", () => {
-            document.body.classList.toggle("dark");
-            localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-            updateParallaxBg();
-        });
+      const toggle = document.getElementById("themeToggle");
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark") {
+        document.body.classList.add("dark");
+        toggle.checked = true;
+      }
+      toggle.addEventListener("change", () => {
+        document.body.classList.toggle("dark");
+        localStorage.setItem(
+          "theme",
+          document.body.classList.contains("dark") ? "dark" : "light",
+        );
+        updateParallaxBg();
+      });
 
-        const parallaxBg = document.querySelector('.parallax-bg');
-        function updateParallaxBg() {
-            const scrollPosition = window.scrollY;
-            const windowHeight = window.innerHeight;
-            const documentHeight = document.body.scrollHeight;
-            const maxScroll = documentHeight - windowHeight;
-            const parallaxSpeed = 0.5;
-            const translateY = (scrollPosition / maxScroll) * 100 * parallaxSpeed;
-            parallaxBg.style.transform = `translate3d(0, -${translateY}%, 0)`;
-        }
+      const parallaxBg = document.querySelector(".parallax-bg");
+      function updateParallaxBg() {
+        const scrollPosition = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.body.scrollHeight;
+        const maxScroll = documentHeight - windowHeight;
+        const parallaxSpeed = 0.5;
+        const translateY = (scrollPosition / maxScroll) * 100 * parallaxSpeed;
+        parallaxBg.style.transform = `translate3d(0, -${translateY}%, 0)`;
+      }
 
-        window.addEventListener('scroll', updateParallaxBg);
-        window.addEventListener('load', updateParallaxBg);
-        window.addEventListener('resize', updateParallaxBg);
+      window.addEventListener("scroll", updateParallaxBg);
+      window.addEventListener("load", updateParallaxBg);
+      window.addEventListener("resize", updateParallaxBg);
     </script>
-</body>
+  </body>
 </html>
