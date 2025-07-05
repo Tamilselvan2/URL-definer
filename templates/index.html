@@ -491,13 +491,22 @@
         }
         .main-container {
           flex-direction: column;
+          gap: 20px;
         }
-        .left,
-        .right {
+        .analysis-box,
+        .summary-box {
           width: 100%;
+          margin-bottom: 20px;
         }
-        .frosty-box.main-box {
-          width: 100%;
+      }
+
+      @media (max-width: 991px) and (min-width: 769px) {
+        .main-container {
+          gap: 20px;
+        }
+        .analysis-box,
+        .summary-box {
+          margin-bottom: 20px;
         }
       }
 
