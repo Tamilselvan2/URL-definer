@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "URL Classifier Flask Application",
   "scripts": {
+    "setup": "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3 get-pip.py && python3 -m pip install -r requirements.txt",
     "dev": "python3 app.py",
     "install-python-deps": "python3 -m pip install -r requirements.txt"
   },
