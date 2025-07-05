@@ -584,62 +584,66 @@
       </div>
     </div>
 
-    <div id="resultContainer" class="frosty-box main-box" style="display: none">
+    <div id="resultContainer" style="display: none">
       <div class="main-container">
-        <div class="left">
-          <h2>URL Analysis</h2>
-          <p><strong>Original URL:</strong></p>
-          <div class="url-container">
-            <p class="url-text highlight" id="originalUrl"></p>
-          </div>
-          <p><strong>Final URL:</strong></p>
-          <div class="cleaned-url-container">
-            <p class="url-text highlight" id="cleanedUrl"></p>
-            <button id="copyBtn" class="copy-btn">Copy</button>
-          </div>
-          <p>
-            <strong>Is Valid:</strong>
-            <span class="status" id="validStatus"></span>
-          </p>
-          <p>
-            <strong>Spam (Rule-Based):</strong>
-            <span class="status" id="spamStatus"></span>
-          </p>
-          <p>
-            <strong>ML Prediction:</strong>
-            <span class="status" id="mlPrediction"></span>
-          </p>
-          <p id="fromCsvNote" style="display: none">
-            <em
-              >Note: This result was retrieved from previous user feedback or
-              analysis.</em
-            >
-          </p>
-          <hr />
-          <button class="collapsible">URL Breakdown</button>
-          <div class="collapse-content">
+        <div class="analysis-box">
+          <div class="analysis-content">
+            <h2>URL Analysis</h2>
+            <p><strong>Original URL:</strong></p>
+            <div class="url-container">
+              <p class="url-text highlight" id="originalUrl"></p>
+            </div>
+            <p><strong>Final URL:</strong></p>
+            <div class="cleaned-url-container">
+              <p class="url-text highlight" id="cleanedUrl"></p>
+              <button id="copyBtn" class="copy-btn">Copy</button>
+            </div>
             <p>
-              <strong>Protocol:</strong>
-              <span class="breakdown-text" id="protocol"></span>
+              <strong>Is Valid:</strong>
+              <span class="status" id="validStatus"></span>
             </p>
             <p>
-              <strong>Domain:</strong>
-              <span class="breakdown-text" id="domain"></span>
+              <strong>Spam (Rule-Based):</strong>
+              <span class="status" id="spamStatus"></span>
             </p>
             <p>
-              <strong>Path:</strong>
-              <span class="url-tooltip breakdown-text" id="path"></span>
+              <strong>ML Prediction:</strong>
+              <span class="status" id="mlPrediction"></span>
             </p>
-          </div>
-          <button class="collapsible">Query Parameters</button>
-          <div class="collapse-content" id="queryParamsContainer">
-            <ul id="queryParamsList"></ul>
+            <p id="fromCsvNote" style="display: none">
+              <em
+                >Note: This result was retrieved from previous user feedback or
+                analysis.</em
+              >
+            </p>
+            <hr />
+            <button class="collapsible">URL Breakdown</button>
+            <div class="collapse-content">
+              <p>
+                <strong>Protocol:</strong>
+                <span class="breakdown-text" id="protocol"></span>
+              </p>
+              <p>
+                <strong>Domain:</strong>
+                <span class="breakdown-text" id="domain"></span>
+              </p>
+              <p>
+                <strong>Path:</strong>
+                <span class="url-tooltip breakdown-text" id="path"></span>
+              </p>
+            </div>
+            <button class="collapsible">Query Parameters</button>
+            <div class="collapse-content" id="queryParamsContainer">
+              <ul id="queryParamsList"></ul>
+            </div>
           </div>
         </div>
-        <div class="right">
-          <h2>Page Summary</h2>
-          <p id="summaryStatus">Summarizing for you</p>
-          <pre id="summaryOutput"></pre>
+        <div class="summary-box">
+          <div class="summary-content">
+            <h2>Page Summary</h2>
+            <p id="summaryStatus">Summarizing for you</p>
+            <pre id="summaryOutput"></pre>
+          </div>
         </div>
       </div>
     </div>
