@@ -30,35 +30,8 @@ MODEL_PATH = 'url_classifier.pkl'
 FEATURE_EXTRACTOR_PATH = 'feature_extractor.pkl'
 DATASET_PATH = 'dataset.csv'
 
-# Constants
-SUSPICIOUS_KEYWORDS = [
-    'login', 'secure', 'verify', 'free', 'win', 'promo', 'gift', 'click',
-    'update', 'account', 'confirm', 'deal', 'redeem', 'prize', 'join'
-]
-
-
-def extract_handcrafted_features(urls):
-    """Extract handcrafted features from URLs."""
-    features = []
-    for url in urls:
-        try:
-            parsed = urlparse(url)
-            from urllib.parse import parse_qs
-            query_params = parse_qs(parsed.query)
-            
-            url_length = len(url)
-            num_query_params = len(query_params)
-            has_suspicious = int(any(keyword in url.lower() for keyword in SUSPICIOUS_KEYWORDS))
-            domain = parsed.netloc.lower().replace('www.', '')
-            num_subdomains = len(domain.split('.')) - 2 if domain else 0
-            is_https = int(parsed.scheme == 'https')
-            
-            features.append([url_length, num_query_params, has_suspicious, num_subdomains, is_https])
-        except Exception as e:
-            logger.warning(f"Error extracting features for URL '{url}': {str(e)}")
-            features.append([0, 0, 0, 0, 0])
-    
-    return np.array(features)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from features import SUSPICIOUS_KEYWORDS, extract_handcrafted_features
 
 
 def train_model():
