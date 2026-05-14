@@ -1,0 +1,20 @@
+name: Keepalive Ping
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'    # every 15 minutes
+  workflow_dispatch: {}       # allow manual runs
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      KEEPALIVE_URL: ${{ secrets.KEEPALIVE_URL }}
+    steps:
+      - name: Ping app (safe curl)
+        run: |
+          if [ -z "${KEEPALIVE_URL}" ]; then
+            echo "KEEPALIVE_URL is not set. Set it in repository Secrets."; exit 1
+          fi
+          echo "Pinging $KEEPALIVE_URL"
+          curl -fsS --retry 3 "${KEEPALIVE_URL}" || echo "Ping failed (non-fatal)"
