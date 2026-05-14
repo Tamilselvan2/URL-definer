@@ -1,0 +1,28 @@
+{
+  "buildCommand": "bash build.sh",
+  "startCommand": "gunicorn app:app",
+  "envs": [
+    {
+      "key": "FLASK_ENV",
+      "value": "production"
+    },
+    {
+      "key": "PORT",
+      "value": "5000"
+    },
+    {
+      "key": "GENAI_API_KEY",
+      "value": "",
+      "previewValue": ""
+    },
+    {
+      "key": "VT_API_KEY",
+      "value": "",
+      "previewValue": ""
+    },
+    {
+      "key": "ENABLE_SUMMARY",
+      "value": "true"
+    }
+  ]
+}
