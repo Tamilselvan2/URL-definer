@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 import urllib.parse
 import re
 import requests
@@ -19,12 +22,31 @@ import joblib
 import logging
 import os
 from urllib.parse import urlparse
+from functools import wraps
+import threading
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Security and rate-limiting setup
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24))
+csrf = CSRFProtect(app)
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Constants for HTTP requests and tracking parameters
 HEADERS = {
@@ -54,6 +76,33 @@ FEATURE_EXTRACTOR_PATH = 'feature_extractor.pkl'
 classifier = None
 feature_extractor = None
 
+# Flag to track deferred retraining
+_retrain_pending = False
+_retrain_lock = threading.Lock()
+
+
+def retry_with_backoff(max_retries=3, initial_delay=1, backoff_factor=2):
+    """Decorator for retrying requests with exponential backoff."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                    last_exception = e
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Attempt {attempt + 1}/{max_retries} failed for {func.__name__}. Retrying in {delay}s...")
+                        time.sleep(delay)
+                        delay *= backoff_factor
+                    else:
+                        logger.error(f"All {max_retries} attempts failed for {func.__name__}")
+            raise last_exception
+        return wrapper
+    return decorator
+
 # Function to extract handcrafted features
 def extract_handcrafted_features(urls):
     features = []
@@ -78,66 +127,95 @@ def decision_to_confidence(decision_score):
 
 # Function to train or retrain the model
 def train_model():
-    global classifier, feature_extractor
+    """Train the model asynchronously. Call from background thread."""
+    global classifier, feature_extractor, _retrain_pending
     try:
-        logger.debug("Loading dataset.csv for training")
-        data = pd.read_csv('dataset.csv')
-        logger.debug(f"Dataset loaded with {len(data)} rows")
-        
-        data['label'] = data['label'].str.capitalize()
-        X = data['url']
-        y = data['label']
-        
-        feature_extractor = FeatureUnion([
-            ('tfidf', TfidfVectorizer(
-                lowercase=True,
-                token_pattern=r'(?u)\b\w+\b|[^\w\s]',
-                max_features=5000
-            )),
-            ('handcrafted', FunctionTransformer(extract_handcrafted_features, validate=False))
-        ])
-        
-        classifier = Pipeline([
-            ('features', feature_extractor),
-            ('clf', SVC(kernel='linear', random_state=42))
-        ])
-        
-        classifier.fit(X, y)
-        logger.debug("Model trained successfully")
-        
-        cv_scores = cross_val_score(classifier, X, y, cv=5, scoring='f1_macro')
-        logger.debug(f"Cross-validation F1 scores: {cv_scores}")
-        logger.debug(f"Average F1 score: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
-        
-        joblib.dump(classifier, MODEL_PATH)
-        joblib.dump(feature_extractor, FEATURE_EXTRACTOR_PATH)
-        logger.debug("Model and feature extractor saved to disk")
-        
-        return cv_scores.mean()
+        with _retrain_lock:
+            logger.debug("Loading dataset.csv for training")
+            if not os.path.exists('dataset.csv'):
+                logger.warning("dataset.csv not found. Skipping model training.")
+                return 0.0
+            
+            data = pd.read_csv('dataset.csv')
+            if len(data) < 2:
+                logger.warning("Insufficient data for model training (need at least 2 samples)")
+                return 0.0
+            
+            logger.debug(f"Dataset loaded with {len(data)} rows")
+            
+            data['label'] = data['label'].str.capitalize()
+            X = data['url']
+            y = data['label']
+            
+            feature_extractor = FeatureUnion([
+                ('tfidf', TfidfVectorizer(
+                    lowercase=True,
+                    token_pattern=r'(?u)\b\w+\b|[^\w\s]',
+                    max_features=5000
+                )),
+                ('handcrafted', FunctionTransformer(extract_handcrafted_features, validate=False))
+            ])
+            
+            classifier = Pipeline([
+                ('features', feature_extractor),
+                ('clf', SVC(kernel='linear', random_state=42, probability=True))
+            ])
+            
+            classifier.fit(X, y)
+            logger.debug("Model trained successfully")
+            
+            cv_scores = cross_val_score(classifier, X, y, cv=min(5, len(data)), scoring='f1_macro')
+            logger.debug(f"Cross-validation F1 scores: {cv_scores}")
+            logger.debug(f"Average F1 score: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
+            
+            joblib.dump(classifier, MODEL_PATH)
+            joblib.dump(feature_extractor, FEATURE_EXTRACTOR_PATH)
+            logger.debug("Model and feature extractor saved to disk")
+            
+            _retrain_pending = False
+            return cv_scores.mean()
     except Exception as e:
         logger.error(f"Error training model: {str(e)}")
         return 0.0
 
-# Load or train the model at startup
+
+def schedule_retrain():
+    """Schedule a deferred model retrain (background thread)."""
+    global _retrain_pending
+    if not _retrain_pending:
+        _retrain_pending = True
+        thread = threading.Thread(target=train_model, daemon=True)
+        thread.start()
+        logger.debug("Model retraining scheduled in background")
+
+
+# Load existing model artifacts at startup (no training)
 if os.path.exists(MODEL_PATH) and os.path.exists(FEATURE_EXTRACTOR_PATH):
     try:
         classifier = joblib.load(MODEL_PATH)
         feature_extractor = joblib.load(FEATURE_EXTRACTOR_PATH)
-        logger.debug("Loaded existing model and feature extractor from disk")
+        logger.info("✓ Loaded existing model and feature extractor from disk")
     except Exception as e:
         logger.error(f"Error loading model from disk: {str(e)}")
-        train_model()
+        logger.warning("Model will not be available until it is trained via scripts/train.py")
 else:
-    train_model()
+    logger.warning("Model artifacts not found. Please run: python scripts/train.py")
+    logger.warning("The /analyze endpoint will not work until the model is trained.")
 
 # Configure the Google Generative AI API
-try:
-    genai.configure(api_key="AIzaSyAExghwYHuQP_qkKJ50hrJFyAGKwjy0R34")
-    logger.debug("Google Generative AI configured")
-except Exception as e:
-    logger.error(f"Error configuring Google Generative AI: {str(e)}")
+GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+ENABLE_SUMMARY = os.getenv("ENABLE_SUMMARY", "true").lower() in ("true", "1", "yes")
 
-VT_API_KEY = "a9507f6997678501d52e54c24bc69e2d1e0fd3e595d3c4697dad568bb3007129"
+if GENAI_API_KEY:
+    try:
+        genai.configure(api_key=GENAI_API_KEY)
+        logger.info("✓ Google Generative AI configured")
+    except Exception as e:
+        logger.error(f"Error configuring Google Generative AI: {str(e)}")
+else:
+    logger.warning("GENAI_API_KEY environment variable not set. Page summarization will not work.")
+
+VT_API_KEY = os.getenv("VT_API_KEY")
 
 def check_url_in_csv(url):
     try:
@@ -172,11 +250,12 @@ def append_to_csv(url, label):
         # Save the updated dataset
         df.to_csv('dataset.csv', index=False)
         
-        # Retrain the model
-        train_model()
+        # Schedule retraining in background (don't block request)
+        schedule_retrain()
     except Exception as e:
         logger.error(f"Error updating dataset: {str(e)}")
 
+@retry_with_backoff(max_retries=3, initial_delay=1)
 def follow_redirects(url):
     try:
         response = requests.get(url, headers=HEADERS, allow_redirects=True, timeout=10)
@@ -258,6 +337,10 @@ def simplify_known_paths(url):
     return urllib.parse.urlunparse(parsed._replace(query='', fragment=''))
 
 def generate_summary(url, is_reachable):
+    """Generate a summary of the page content. Returns early if summarization is disabled."""
+    if not ENABLE_SUMMARY or not GENAI_API_KEY:
+        return "Page summarization is disabled or API key not configured"
+    
     if not is_reachable:
         return "Site is not available"
 
@@ -280,7 +363,7 @@ def generate_summary(url, is_reachable):
         f"within 130 words, not above 130 but can be below 130"
     )
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-3-flash-preview")
         response = model.generate_content(prompt)
         logger.debug(f"Generated summary for {url}")
         return response.text.strip()
@@ -289,14 +372,15 @@ def generate_summary(url, is_reachable):
         return f"Summary error: {str(e)}"
 
 def check_with_virustotal(url):
-    if not VT_API_KEY or VT_API_KEY == "your_virustotal_api_key_here":
-        logger.error("VirusTotal API key not set")
-        return "Error", "VirusTotal API key not set - External", 0, 0
+    if not VT_API_KEY:
+        logger.warning("VirusTotal API key not set. Falling back to SVM prediction.")
+        return "Error", "VirusTotal API key not set - Internal", 0, 0
 
     scan_url = "https://www.virustotal.com/vtapi/v2/url/scan"
     scan_params = {"apikey": VT_API_KEY, "url": url}
     try:
-        scan_response = requests.post(scan_url, data=scan_params)
+        # Scan URL with timeout
+        scan_response = requests.post(scan_url, data=scan_params, timeout=15)
         if scan_response.status_code != 200:
             logger.error(f"VirusTotal scan failed for {url}: {scan_response.status_code}")
             return "Error", "Unable to submit URL to VirusTotal - External", 0, 0
@@ -312,30 +396,39 @@ def check_with_virustotal(url):
         attempts = 0
         max_attempts = 6
         while attempts < max_attempts:
-            report_response = requests.get(report_url, params=report_params)
-            if report_response.status_code == 200:
-                report = report_response.json()
-                if report.get("response_code") == 1:
-                    positives = report.get("positives", 0)
-                    total = report.get("total", 0)
-                    if positives == 0:
-                        logger.debug(f"VirusTotal result for {url}: Safe")
-                        return "Safe", "Predicted as safe with high confidence based on feature analysis - External", positives, total
+            try:
+                report_response = requests.get(report_url, params=report_params, timeout=15)
+                if report_response.status_code == 200:
+                    report = report_response.json()
+                    if report.get("response_code") == 1:
+                        positives = report.get("positives", 0)
+                        total = report.get("total", 0)
+                        if positives == 0:
+                            logger.debug(f"VirusTotal result for {url}: Safe")
+                            return "Safe", "Predicted as safe with high confidence based on feature analysis - External", positives, total
+                        else:
+                            logger.debug(f"VirusTotal result for {url}: Spam")
+                            return "Spam", f"Classified as suspicious based on {positives} behavioral features - External", positives, total
                     else:
-                        logger.debug(f"VirusTotal result for {url}: Spam")
-                        return "Spam", f"Classified as suspicious based on {positives} behavioral features - External", positives, total
+                        time.sleep(5)
+                        attempts += 1
                 else:
+                    logger.error(f"VirusTotal report fetch failed for {url}: {report_response.status_code}")
+                    return "Error", "Unable to get report from VirusTotal - External", 0, 0
+            except requests.exceptions.Timeout:
+                logger.warning(f"VirusTotal report request timeout (attempt {attempts + 1}/{max_attempts})")
+                attempts += 1
+                if attempts < max_attempts:
                     time.sleep(5)
-                    attempts += 1
-            else:
-                logger.error(f"VirusTotal report fetch failed for {url}: {report_response.status_code}")
-                return "Error", "Unable to get report from VirusTotal - External", 0, 0
 
         logger.warning(f"VirusTotal analysis in progress for {url}")
         return "Analysis in progress", "Please check back later - External", 0, 0
+    except requests.exceptions.Timeout:
+        logger.error(f"VirusTotal request timeout for {url}")
+        return "Error", "VirusTotal request timeout - External", 0, 0
     except Exception as e:
         logger.error(f"Error in VirusTotal check for {url}: {str(e)}")
-        return "Error", f"VirusTotal error: {str(e)} - External", 0, 0
+        return "Error", f"VirusTotal error: {type(e).__name__} - External", 0, 0
 
 def predict_with_model(url):
     if classifier is None:
@@ -357,9 +450,15 @@ def index():
     return render_template("index.html")
 
 @app.route("/analyze", methods=["POST"])
+@limiter.limit("20 per hour")
+@csrf.exempt  # Allow form submission from frontend without CSRF token
 def analyze():
     logger.debug(f"Received analyze request: {request.method}")
     logger.debug(f"Form data: {request.form}")
+    
+    # Check if model is available for predictions
+    if classifier is None:
+        return jsonify({"error": "Model not available. Please run 'python scripts/train.py' to train the model."}), 503
     
     if "url" in request.form:
         input_url = request.form["url"].strip()
@@ -538,6 +637,8 @@ def analyze():
     return jsonify({"error": "Invalid request"}), 400
 
 @app.route("/report", methods=["POST"])
+@limiter.limit("20 per hour")
+@csrf.exempt
 def report():
     logger.debug(f"Received report request: {request.method}")
     logger.debug(f"Form data: {request.form}")
@@ -557,6 +658,26 @@ def report():
     
     return jsonify({"error": "Invalid report request"}), 400
 
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded."""
+    logger.warning(f"Rate limit exceeded: {request.remote_addr}")
+    return jsonify({
+        "error": "Rate limit exceeded. Maximum 20 requests per hour allowed."
+    }), 429
+
+
+@app.errorhandler(500)
+def internal_error_handler(e):
+    """Handle internal server errors."""
+    logger.error(f"Internal server error: {str(e)}")
+    return jsonify({
+        "error": "Internal server error. Please try again later."
+    }), 500
+
+
 if __name__ == "__main__":
     logger.info("Starting Flask app")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    logger.info(f"Model status: {'✓ Loaded' if classifier else '✗ Not loaded - run scripts/train.py'}")
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=os.getenv('FLASK_ENV') == 'development')
