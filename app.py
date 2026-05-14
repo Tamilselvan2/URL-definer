@@ -63,10 +63,7 @@ TRACKERS = {
     'store', 'srno', 'otracker', 'ppt', 'ppn', 'ssid', 'iid', 'pid', 'cmp'
 }
 
-SUSPICIOUS_KEYWORDS = [
-    'login', 'secure', 'verify', 'free', 'win', 'promo', 'gift', 'click',
-    'update', 'account', 'confirm', 'deal', 'redeem', 'prize', 'join'
-]
+from features import SUSPICIOUS_KEYWORDS, extract_handcrafted_features
 
 # Paths for saving the model and feature extractor
 MODEL_PATH = 'url_classifier.pkl'
@@ -103,22 +100,7 @@ def retry_with_backoff(max_retries=3, initial_delay=1, backoff_factor=2):
         return wrapper
     return decorator
 
-# Function to extract handcrafted features
-def extract_handcrafted_features(urls):
-    features = []
-    for url in urls:
-        parsed = urlparse(url)
-        query_params = urllib.parse.parse_qs(parsed.query)
-        
-        url_length = len(url)
-        num_query_params = len(query_params)
-        has_suspicious = int(any(keyword in url.lower() for keyword in SUSPICIOUS_KEYWORDS))
-        domain = parsed.netloc.lower().replace('www.', '')
-        num_subdomains = len(domain.split('.')) - 2 if domain else 0
-        is_https = int(parsed.scheme == 'https')
-        
-        features.append([url_length, num_query_params, has_suspicious, num_subdomains, is_https])
-    return np.array(features)
+# Removed extract_handcrafted_features as it is imported from features.py
 
 # Function to normalize decision function scores to a confidence score (0-100%)
 def decision_to_confidence(decision_score):
